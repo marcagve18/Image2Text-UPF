@@ -76,6 +76,7 @@ class CoCoDataset(data.Dataset):
             ############ LOAD IMAGES FROM URL ############
             path = self.coco.loadImgs(img_id)[0]
             url = path["coco_url"]
+            # print(f"ID {img_id}, URL: {url}")
             image = Image.fromarray(io.imread(url)).convert("RGB")
             
             
