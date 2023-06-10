@@ -12,7 +12,7 @@ from PIL import Image
 from transformers import GPT2Tokenizer, GPT2LMHeadModel
 from torch.utils.data import DataLoader
 from torch.utils.data import Dataset, DataLoader
-
+import skimage.io as io
 
 # Define the transformation to be applied to each image
 image_transform = transforms.Compose([
@@ -53,25 +53,25 @@ class CaptionGenerator(nn.Module):
         for image_feature, caption in zip(image_features, captions):
             # Step 2: Tokenize captions and prepare input tensors
             # caption = self.gpt2_tokenizer(caption, return_tensors="pt")
-            embeds = self.gpt2_model.transformer.wte.weight[caption.input_ids, :]
+            embeds = self.gpt2_model.transformer.wte.weight[caption, :]
             # Step 3: Pass image features through a feed-forward network to get a format suitable for GPT-2
             # Note: You might need to adjust the dimensions and other details according to your implementation.
             image_feature = self.fc(image_feature)
 
             # Step 4: Combine image features and caption tokens
             # We add the image features at the start of each sequence (assuming image_features are tensors of the appropriate size)
-            #inputs["input_ids"] = torch.cat((image_feature, inputs["input_ids"]), dim=1)
-            #inputs["attention_mask"] = torch.cat((torch.ones_like(image_feature), inputs["attention_mask"]), dim=1)
+            
+            embeds = torch.cat((image_feature.unsqueeze(0).unsqueeze(0), embeds), dim=1)
 
             # Step 5: Forward pass through GPT-2 model
             outputs = self.gpt2_model(inputs_embeds = embeds)
             predicted_token_ids = torch.argmax(outputs.logits, dim=-1)
             prediction_outputs.append(predicted_token_ids)
-            print(tokenizer.decode(predicted_token_ids[0]))
+            #print(tokenizer.decode(predicted_token_ids[0]))
             
 
-
-        return torch.tensor(prediction_outputs)
+        
+        return prediction_outputs
 
 
 class CocoDataset(Dataset):
@@ -89,8 +89,11 @@ class CocoDataset(Dataset):
     def __getitem__(self, index):
         image_id = self.image_ids[index]
         image_info = self.coco.loadImgs(image_id)[0]
-        image_path = os.path.join(self.image_dir, image_info['file_name'])
-        image = Image.open(image_path).convert('RGB')
+        url = image_info["coco_url"]
+        # image_path = os.path.join(self.image_dir, image_info['file_name'])
+        image = Image.fromarray(io.imread(url))
+        
+        # image = Image.open(image_path).convert('RGB')
         if self.transform:
             image = self.transform(image)
 
@@ -107,12 +110,12 @@ image_transform = transforms.Compose([
     transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
 ])
 
-train_image_dir = "../data/train2014"
-train_captions_file = "../data/annotations/captions_train2014.json"
+train_image_dir = "../data/cocoapi/images/train2014"
+train_captions_file = "../data/cocoapi/annotations/captions_train2014.json"
 train_dataset = CocoDataset(train_image_dir, train_captions_file, transform=image_transform)
 
-val_image_dir = "../data/val2014"
-val_captions_file = "../data/annotations/captions_val2014.json"
+val_image_dir = "../data/cocoapi/images/val2014"
+val_captions_file = "../data/cocoapi/annotations/captions_val2014.json"
 val_dataset = CocoDataset(val_image_dir, val_captions_file, transform=image_transform)
 
 
@@ -171,12 +174,28 @@ tokenizer.add_special_tokens({'pad_token': tokenizer.eos_token})
 for epoch in range(num_epochs):
     for images, captions in train_data_loader:
         optimizer.zero_grad()
-        caption_tokens = [tokenizer(caption, return_tensors="pt") for caption in captions ]
+        caption_tokens = [tokenizer(caption, return_tensors="pt").input_ids for caption in captions ]
         outputs = caption_generator(images, caption_tokens, tokenizer)
-        loss = criterion(outputs, caption_tokens)
-        print(loss, "WASA")
-        loss.backward()
-        optimizer.step()
+        batch_loss = 0
+        for caption_input, caption_output in zip(caption_tokens, outputs):
+            caption_input = caption_input.type(torch.float)
+            caption_input.requires_grad_()
+            caption_output = caption_output.type(torch.float)
+            caption_output.requires_grad_()
+            
+            # Determine the difference in dimensions
+            dim_diff = abs(caption_input.shape[1] - caption_output.shape[1])
+            if (caption_input.shape[1] < caption_output.shape[1]):
+                caption_input = nn.functional.pad(caption_input, (0, dim_diff))
+            elif (caption_input.shape[1] > caption_output.shape[1]):
+                caption_output = nn.functional.pad(caption_output, (0, dim_diff))
+
+            loss = criterion(caption_output, caption_input)
+            batch_loss += loss
+
+            loss.backward()
+            optimizer.step()
+        print(f"Batch loss : {batch_loss/len(captions)}")
 
 # Inference
 
