@@ -13,6 +13,8 @@ from data_loader import get_loader
 import math
 import torch.utils.data as data
 
+cocoapi_year = "2017"
+
 class EncoderCNN(nn.Module):
     def __init__(self, embed_size):
         super(EncoderCNN, self).__init__()
@@ -117,6 +119,7 @@ data_loader = get_loader(
     vocab_threshold=vocab_threshold,
     vocab_from_file=vocab_from_file,
     cocoapi_loc="../data",
+    cocoapi_year=cocoapi_year,
 )
 
 # The size of the vocabulary.

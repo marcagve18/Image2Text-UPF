@@ -20,6 +20,7 @@ def get_loader(
     vocab_from_file=True,
     num_workers=0,
     cocoapi_loc="/opt",
+    cocoapi_year="2014",
 ):
     """Returns the data loader.
     Args:
@@ -50,9 +51,9 @@ def get_loader(
             assert os.path.exists(
                 vocab_file
             ), "vocab_file does not exist. Change vocab_from_file to False to create vocab_file."
-        img_folder = os.path.join(cocoapi_loc, "cocoapi/images/train2014/")
+        img_folder = os.path.join(cocoapi_loc, f"cocoapi/images/train{cocoapi_year}/")
         annotations_file = os.path.join(
-            cocoapi_loc, "cocoapi/annotations/captions_train2014.json"
+            cocoapi_loc, f"cocoapi/annotations/captions_train{cocoapi_year}.json"
         )
 
     elif mode == "test":
@@ -61,9 +62,9 @@ def get_loader(
             vocab_file
         ), "Must first generate vocab.pkl from training data."
         assert vocab_from_file, "Change vocab_from_file to True."
-        img_folder = os.path.join(cocoapi_loc, "cocoapi/images/test2014/")
+        img_folder = os.path.join(cocoapi_loc, f"cocoapi/images/test{cocoapi_year}/")
         annotations_file = os.path.join(
-            cocoapi_loc, "cocoapi/annotations/image_info_test2014.json"
+            cocoapi_loc, f"cocoapi/annotations/image_info_test{cocoapi_year}.json"
         )
     else:
         raise ValueError(f"Invalid mode: {mode}")
