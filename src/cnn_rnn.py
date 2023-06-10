@@ -60,6 +60,36 @@ class DecoderRNN(nn.Module):
 
         return outputs
 
+    def sample(self, inputs, states=None, max_len=20):
+        """
+        accepts pre-processed image tensor (inputs) and returns predicted
+        sentence (list of tensor ids of length max_len)
+        Args:
+            inputs: shape is (1, 1, embed_size)
+            states: initial hidden state of the LSTM
+            max_len: maximum length of the predicted sentence
+
+        Returns:
+            res: list of predicted words indices
+        """
+        res = []
+
+        # Now we feed the LSTM output and hidden states back into itself to get the caption
+        for i in range(max_len):
+            lstm_out, states = self.lstm(
+                inputs, states
+            )  # lstm_out: (1, 1, hidden_size)
+            outputs = self.last_linear(lstm_out.squeeze(dim=1))  # outputs: (1, vocab_size)
+            _, predicted_idx = outputs.max(dim=1)  # predicted: (1, 1)
+            res.append(predicted_idx.item())
+            # if the predicted idx is the stop index, the loop stops
+            if predicted_idx == 1:
+                break
+            inputs = self.vocabulary_embedding(predicted_idx)  # inputs: (1, embed_size)
+            # prepare input for next iteration
+            inputs = inputs.unsqueeze(1)  # inputs: (1, 1, embed_size)
+
+        return res
 
 class ImageCaptioner(nn.Module):
     def __init__(self, embed_size, hidden_size, vocabulary_size, num_layers=1, bidirectional_lstm=False) -> None:

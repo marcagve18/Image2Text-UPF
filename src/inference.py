@@ -6,7 +6,6 @@ import matplotlib.pyplot as plt
 import MyTorchWrapper as mtw
 from  cnn_rnn import ImageCaptioner
 
-print("hello")
 
 cocoapi_year = "2017"
 device = mtw.get_torch_device(use_gpu=True, debug=True)
@@ -42,10 +41,10 @@ vocab_size = len(data_loader.dataset.vocab)
 image_captioner = ImageCaptioner(embedding_size, hidden_size, vocab_size)
 image_captioner.eval()
 
-image_captioner.CNN.load_state_dict(torch.load("../models/encoder-3.pkl"))
-image_captioner.RNN.load_state_dict(torch.load("../models/decoder-3.pkl"))
-
 image_captioner.to(device)
+image_captioner.CNN.load_state_dict(torch.load("../models/encoder-3.pkl", map_location=torch.device(device)))
+image_captioner.RNN.load_state_dict(torch.load("../models/decoder-3.pkl", map_location=torch.device(device)))
+
 
 original_image_folder = f"../data/cocoapi/images/val{cocoapi_year}/"
 
@@ -60,6 +59,12 @@ for image, token_caption, filename in data_loader:
     original_image = Image.open(original_image_folder + filename[0])
     plt.imshow(original_image)
     plt.show()
+
+    image = image.to(device)
+    features = image_captioner.CNN(image).unsqueeze(1)
+    output = image_captioner.RNN.sample(features)
+    predicted_caption = clean_sentence(output, data_loader.dataset.vocab.idx2word)
+    print(f"PREDICTED CAPTION {predicted_caption}")
 
     i += 1
     if i == images_to_load:
