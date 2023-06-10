@@ -14,9 +14,6 @@ import math
 import torch.utils.data as data
 import MyTorchWrapper as mtw
 
-cocoapi_year = "2014"
-
-        
 
 class EncoderCNN(nn.Module):
     def __init__(self, embed_size):
@@ -36,6 +33,7 @@ class EncoderCNN(nn.Module):
         features = self.embed(features)
         return features
 
+
 class DecoderRNN(nn.Module):
     def __init__(self, hidden_size, embedding_size, vocabulary_size, num_layers=1, bidirectional_lstm=False):
         super().__init__()
@@ -44,7 +42,7 @@ class DecoderRNN(nn.Module):
         self.hidden_size = hidden_size
         self.num_layers = num_layers
         self.vocabulary_embedding = nn.Embedding(vocabulary_size, embedding_size)
-        self.lstm = nn.LSTM(input_size=embedding_size, hidden_size=hidden_size, num_layers=num_layers, batch_first=True)
+        self.lstm = nn.LSTM(input_size=embedding_size, hidden_size=hidden_size, num_layers=num_layers, batch_first=True, bidirectional=bidirectional_lstm)
         self.last_linear = nn.Linear(hidden_size * 2 if self.bidirectional else hidden_size, vocabulary_size)
         
         
@@ -63,7 +61,6 @@ class DecoderRNN(nn.Module):
         return outputs
 
 
-
 class ImageCaptioner(nn.Module):
     def __init__(self, embed_size, hidden_size, vocabulary_size, num_layers=1, bidirectional_lstm=False) -> None:
         super().__init__()
@@ -78,120 +75,114 @@ class ImageCaptioner(nn.Module):
         return output
     
 
-batch_size = 128  # batch size
-vocab_threshold = 5  # minimum word count threshold
-vocab_from_file = True  # if True, load existing vocab file
-embedding_size = 256  # dimensionality of image and word embeddings
-hidden_size = 512  # number of features in hidden state of the RNN decoder
-num_epochs = 3  # number of training epochs
-save_every = 1  # determines frequency of saving model weights
-print_every = 20  # determines window for printing average loss
-log_file = "training_log.txt"  # name of file with saved training loss and perplexity
 
-transform_train = transforms.Compose([
-        transforms.Resize(256),
-        transforms.RandomCrop(224),
-        transforms.RandomHorizontalFlip(),
-        transforms.ToTensor(),
-        transforms.Normalize(
-            (0.485, 0.456, 0.406),
-            (0.229, 0.224, 0.225),
-        ),
-    ])
 
-# Build data loader.
-data_loader = get_loader(
-    transform=transform_train,
-    mode="train",
-    batch_size=batch_size,
-    vocab_threshold=vocab_threshold,
-    vocab_from_file=vocab_from_file,
-    cocoapi_loc="../data",
-    cocoapi_year=cocoapi_year,
-    ratio=0.5
-)
 
-# The size of the vocabulary.
-vocab_size = len(data_loader.dataset.vocab)
+if __name__ == '__main__':
+    cocoapi_year = "2017"
 
-# Initializing the encoder and decoder
-image_captioner = ImageCaptioner(embedding_size, hidden_size, vocab_size)
+    batch_size = 128  # batch size
+    vocab_threshold = 5  # minimum word count threshold
+    vocab_from_file = True  # if True, load existing vocab file
+    embedding_size = 256  # dimensionality of image and word embeddings
+    hidden_size = 512  # number of features in hidden state of the RNN decoder
+    num_epochs = 3  # number of training epochs
+    save_every = 1  # determines frequency of saving model weights
+    print_every = 20  # determines window for printing average loss
+    log_file = "training_log.txt"  # name of file with saved training loss and perplexity
 
-# Move models to device
-device = mtw.get_torch_device(use_gpu=True, debug=True)
-image_captioner.to(device)
 
-# Defining the loss function
-criterion = nn.CrossEntropyLoss().to(device)
+    # Build data loader.
+    data_loader = get_loader(
+        image_folder=f"../clean_data/train{cocoapi_year}/",
+        annotations_file=f"../data/cocoapi/annotations/captions_train{cocoapi_year}.json",
+        batch_size=batch_size,
+        vocab_threshold=vocab_threshold,
+        vocab_from_file=vocab_from_file,
+        ratio=0.5
+    )
 
-# Specifying the learnable parameters of the mode
-params = list(image_captioner.RNN.parameters()) + list(image_captioner.CNN.embed.parameters())
+    # The size of the vocabulary.
+    vocab_size = len(data_loader.dataset.vocab)
 
-# Defining the optimize
-optimizer = torch.optim.Adam(params, lr=0.001)
+    # Initializing the encoder and decoder
+    image_captioner = ImageCaptioner(embedding_size, hidden_size, vocab_size)
 
-# Set the total number of training steps per epoch
-total_step = math.ceil(len(data_loader.dataset) / data_loader.batch_sampler.batch_size)
+    # Move models to device
+    device = mtw.get_torch_device(use_gpu=True, debug=True)
+    image_captioner.to(device)
 
-print(total_step)
+    # Defining the loss function
+    criterion = nn.CrossEntropyLoss().to(device)
 
-f = open(log_file, "w")
+    # Specifying the learnable parameters of the mode
+    params = list(image_captioner.RNN.parameters()) + list(image_captioner.CNN.embed.parameters())
 
-for epoch in range(1, num_epochs + 1):
-    for i_step in range(1, total_step + 1):
+    # Defining the optimize
+    optimizer = torch.optim.Adam(params, lr=0.001)
 
-        # Randomly sample a caption length, and sample indices with that length.
-        indices = data_loader.dataset.get_train_indices()
-        # Create and assign a batch sampler to retrieve a batch with the sampled indices.
-        new_sampler = data.sampler.SubsetRandomSampler(indices=indices)
-        data_loader.batch_sampler.sampler = new_sampler
+    # Set the total number of training steps per epoch
+    total_step = math.ceil(len(data_loader.dataset) / data_loader.batch_sampler.batch_size)
 
-        # Obtain the batch.
-        images, captions = next(iter(data_loader))
+    print(total_step)
 
-        # Move batch of images and captions to GPU if CUDA is available.
-        images = images.to(device)
-        captions = captions.to(device)
+    f = open(log_file, "w")
 
-        # Zero the gradients.
-        image_captioner.zero_grad()
+    for epoch in range(1, num_epochs + 1):
+        for i_step in range(1, total_step + 1):
 
-        # Passing the inputs through the CNN-RNN model
-        outputs = image_captioner.forward(images, captions)
+            # Randomly sample a caption length, and sample indices with that length.
+            indices = data_loader.dataset.get_train_indices()
+            # Create and assign a batch sampler to retrieve a batch with the sampled indices.
+            new_sampler = data.sampler.SubsetRandomSampler(indices=indices)
+            data_loader.batch_sampler.sampler = new_sampler
 
-        # Calculating the batch loss.
-        loss = criterion(outputs.view(-1, vocab_size), captions.view(-1))
+            # Obtain the batch.
+            images, captions, _ = next(iter(data_loader))
 
-        
+            # Move batch of images and captions to GPU if CUDA is available.
+            images = images.to(device)
+            captions = captions.to(device)
 
-        # Backwarding pass
-        loss.backward()
+            # Zero the gradients.
+            image_captioner.zero_grad()
 
-        # Updating the parameters in the optimizer
-        optimizer.step()
+            # Passing the inputs through the CNN-RNN model
+            outputs = image_captioner.forward(images, captions)
 
-        # Getting training statistics
-        stats = (
-            f"Epoch [{epoch}/{num_epochs}], Step [{i_step}/{total_step}], "
-            f"Loss: {loss.item():.4f}, Perplexity: {np.exp(loss.item()):.4f}"
-        )
+            # Calculating the batch loss.
+            loss = criterion(outputs.view(-1, vocab_size), captions.view(-1))
 
-        # Print training statistics to file.
-        f.write(stats + "\n")
-        f.flush()
+            
 
-        # Print training statistics (on different line).
-        if i_step % print_every == 0:
-            print("\r" + stats)
+            # Backwarding pass
+            loss.backward()
 
-    # Save the weights.
-    if epoch % save_every == 0:
-        torch.save(
-            image_captioner.RNN.state_dict(), os.path.join("../models", "decoder-%d.pkl" % epoch)
-        )
-        torch.save(
-            image_captioner.CNN.state_dict(), os.path.join("../models", "encoder-%d.pkl" % epoch)
-        )
+            # Updating the parameters in the optimizer
+            optimizer.step()
 
-# Close the training log file.
-f.close()
+            # Getting training statistics
+            stats = (
+                f"Epoch [{epoch}/{num_epochs}], Step [{i_step}/{total_step}], "
+                f"Loss: {loss.item():.4f}, Perplexity: {np.exp(loss.item()):.4f}"
+            )
+
+            # Print training statistics to file.
+            f.write(stats + "\n")
+            f.flush()
+
+            # Print training statistics (on different line).
+            if i_step % print_every == 0:
+                print("\r" + stats)
+
+        # Save the weights.
+        if epoch % save_every == 0:
+            torch.save(
+                image_captioner.RNN.state_dict(), os.path.join("../models", "decoder-%d.pkl" % epoch)
+            )
+            torch.save(
+                image_captioner.CNN.state_dict(), os.path.join("../models", "encoder-%d.pkl" % epoch)
+            )
+
+    # Close the training log file.
+    f.close()
