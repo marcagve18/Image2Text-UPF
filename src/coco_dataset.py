@@ -27,6 +27,7 @@ class CoCoDataset(data.Dataset):
         annotations_file,
         vocab_from_file,
         img_folder,
+        ratio=0.1,
     ):
         self.transform = transform
         self.mode = mode
@@ -45,6 +46,8 @@ class CoCoDataset(data.Dataset):
         if self.mode == "train":
             self.coco = COCO(annotations_file)
             self.ids = list(self.coco.anns.keys())
+            images_amount = int(len(self.ids) * ratio)
+            self.ids = self.ids[0:images_amount]
             print("Obtaining caption lengths...")
 
             #  get list of tokens for each caption
@@ -69,18 +72,18 @@ class CoCoDataset(data.Dataset):
             img_id = self.coco.anns[ann_id]["image_id"]
             
             ############ LOAD IMAGES FROM FILES ############
-            # path = self.coco.loadImgs(img_id)[0]["file_name"]
-            # image = Image.open(os.path.join(self.img_folder, path)).convert("RGB")
+            path = self.coco.loadImgs(img_id)[0]["file_name"] + ".pt"
+            image = torch.load("../clean_data/"+path) # (os.path.join(self.img_folder, path)).convert("RGB")
 
             
             ############ LOAD IMAGES FROM URL ############
-            path = self.coco.loadImgs(img_id)[0]
-            url = path["coco_url"]
-            # print(f"ID {img_id}, URL: {url}")
-            image = Image.fromarray(io.imread(url)).convert("RGB")
+            # path = self.coco.loadImgs(img_id)[0]
+            # url = path["coco_url"]
+            # # print(f"ID {img_id}, URL: {url}")
+            # image = Image.fromarray(io.imread(url)).convert("RGB")
             
             
-            image = self.transform(image)
+            # image = self.transform(image)
 
             # Convert caption to tensor of word ids.
             tokens = nltk.tokenize.word_tokenize(str(caption).lower())

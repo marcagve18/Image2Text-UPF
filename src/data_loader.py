@@ -21,6 +21,7 @@ def get_loader(
     num_workers=0,
     cocoapi_loc="/opt",
     cocoapi_year="2014",
+    ratio=0.1,
 ):
     """Returns the data loader.
     Args:
@@ -82,6 +83,7 @@ def get_loader(
         annotations_file=annotations_file,
         vocab_from_file=vocab_from_file,
         img_folder=img_folder,
+        ratio=ratio,
     )
 
     if mode == "train":
