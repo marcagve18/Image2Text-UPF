@@ -160,4 +160,5 @@ cython_debug/
 #.idea/
 
 data/
-clean_data
+clean_data/
+models/

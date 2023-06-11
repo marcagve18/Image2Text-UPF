@@ -8,7 +8,6 @@ import matplotlib.pyplot as plt
 import torch.nn as nn
 import torchvision.models as models
 import torch
-from torchvision import transforms
 from data_loader import get_loader
 import math
 import torch.utils.data as data
@@ -18,17 +17,26 @@ import MyTorchWrapper as mtw
 class EncoderCNN(nn.Module):
     def __init__(self, embed_size):
         super().__init__()
-        resnet = models.resnet50(pretrained=True)
+        # efficientnet_b7 = models.resnet50(pretrained=True)
+        efficientnet_b7 = models.efficientnet_b7(weights=models.EfficientNet_B7_Weights.DEFAULT)
+
         # disable learning for parameters
-        for param in resnet.parameters():
+        for param in efficientnet_b7.parameters():
             param.requires_grad_(False)
 
-        modules = list(resnet.children())[:-1]
-        self.resnet = nn.Sequential(*modules)
-        self.embed = nn.Linear(resnet.fc.in_features, embed_size)
+        modules = list(efficientnet_b7.children())[:-1]
+        self.efficientnet_b7 = nn.Sequential(*modules)
+        # self.embed = nn.Linear(efficientnet_b7.classifier.in_features, embed_size)
+        self.embed = nn.Sequential(
+            nn.Dropout(0.5),
+            nn.Linear(efficientnet_b7.classifier[-1].in_features, 1000, bias=True),
+            nn.ReLU(),
+            nn.Dropout(0.5),
+            nn.Linear(1000, embed_size, bias=True),
+        )
 
     def forward(self, images):
-        features = self.resnet(images)
+        features = self.efficientnet_b7(images)
         features = features.view(features.size(0), -1)
         features = self.embed(features)
         return features
@@ -116,7 +124,7 @@ if __name__ == '__main__':
     vocab_from_file = True  # if True, load existing vocab file
     embedding_size = 256  # dimensionality of image and word embeddings
     hidden_size = 512  # number of features in hidden state of the RNN decoder
-    num_epochs = 3  # number of training epochs
+    num_epochs = 10  # number of training epochs
     save_every = 1  # determines frequency of saving model weights
     print_every = 20  # determines window for printing average loss
     log_file = "training_log.txt"  # name of file with saved training loss and perplexity
@@ -129,7 +137,7 @@ if __name__ == '__main__':
         batch_size=batch_size,
         vocab_threshold=vocab_threshold,
         vocab_from_file=vocab_from_file,
-        ratio=0.5
+        ratio=1
     )
 
     # The size of the vocabulary.
