@@ -90,16 +90,10 @@ class CoCoDataset(data.Dataset):
         tokens = nltk.tokenize.word_tokenize(str(caption).lower())
         caption = [self.vocab(self.vocab.start_word)]
         caption.extend([self.vocab(token) for token in tokens])
-        
-        # Pad all the captions such that they have the same length (adding <end> tokens)
-        while len(caption) - 1 <= self.max_length:
-            caption.append(self.vocab(self.vocab.end_word))
-            
         caption = torch.Tensor(caption).long()
 
-        image_filename = path.split('.pt')[0]
-        
         # return pre-processed image, caption tensors and image path for testing the model
+        image_filename = path.split('.pt')[0]
         return image, caption, image_filename
   
     
