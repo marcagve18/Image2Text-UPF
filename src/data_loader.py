@@ -18,7 +18,6 @@ def get_loader(
     end_word="<end>",
     unk_word="<unk>",
     vocab_from_file=True,
-    num_workers=0,
     ratio=0.1,
 ):
     """Returns the data loader.
@@ -65,10 +64,10 @@ def get_loader(
     # data loader for COCO dataset.
     data_loader = data.DataLoader(
         dataset=dataset,
-        num_workers=num_workers,
         batch_sampler=data.sampler.BatchSampler(
             sampler=initial_sampler, batch_size=dataset.batch_size, drop_last=False
         ),
+        pin_memory=True,
     )
 
     return data_loader

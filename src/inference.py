@@ -5,6 +5,7 @@ from PIL import Image
 import matplotlib.pyplot as plt
 import MyTorchWrapper as mtw
 from  cnn_rnn import ImageCaptioner
+import torch.utils.data as data
 
 
 cocoapi_year = "2017"
@@ -42,16 +43,24 @@ image_captioner = ImageCaptioner(embedding_size, hidden_size, vocab_size)
 image_captioner.eval()
 
 image_captioner.to(device)
-image_captioner.CNN.load_state_dict(torch.load("../models/encoder-3.pkl", map_location=torch.device(device)))
-image_captioner.RNN.load_state_dict(torch.load("../models/decoder-3.pkl", map_location=torch.device(device)))
+image_captioner.CNN.load_state_dict(torch.load("../models/encoder-10.pkl", map_location=torch.device(device)))
+image_captioner.RNN.load_state_dict(torch.load("../models/decoder-10.pkl", map_location=torch.device(device)))
 
 
 original_image_folder = f"../data/cocoapi/images/val{cocoapi_year}/"
 
-images_to_load = 5
-i = 0
-print(len(data_loader))
-for image, token_caption, filename in data_loader:
+images_to_load = min(5, data_loader.dataset.num_images)
+
+for i in range(images_to_load):
+
+    # Randomly sample a caption length, and sample indices with that length.
+    indices = data_loader.dataset.get_train_indices()
+    # Create and assign a batch sampler to retrieve a batch with the sampled indices.
+    new_sampler = data.sampler.SubsetRandomSampler(indices=indices)
+    data_loader.batch_sampler.sampler = new_sampler
+
+    # Obtain the batch.
+    image, token_caption, filename = next(iter(data_loader))
     token_caption = token_caption.tolist()[0]
     caption = clean_sentence(token_caption, data_loader.dataset.vocab.idx2word)
     print(f"ORIGINAL CAPTION: {caption}")
@@ -65,11 +74,5 @@ for image, token_caption, filename in data_loader:
     output = image_captioner.RNN.sample(features)
     predicted_caption = clean_sentence(output, data_loader.dataset.vocab.idx2word)
     print(f"PREDICTED CAPTION {predicted_caption}")
-
-    i += 1
-    if i == images_to_load:
-        break
-
-
 
      
