@@ -28,10 +28,10 @@ class EncoderCNN(nn.Module):
         self.efficientnet_b7 = nn.Sequential(*modules)
         # self.embed = nn.Linear(efficientnet_b7.classifier.in_features, embed_size)
         self.embed = nn.Sequential(
-            nn.Dropout(0.5, inplace=True),
+            nn.Dropout(0.5),
             nn.Linear(efficientnet_b7.classifier[-1].in_features, 1000, bias=True),
-            nn.SiLU(inplace=True),
-            nn.Dropout(0.5, inplace=True),
+            nn.ReLU(),
+            nn.Dropout(0.5),
             nn.Linear(1000, embed_size, bias=True),
         )
 
@@ -64,10 +64,7 @@ class DecoderRNN(nn.Module):
         embeddings = torch.cat((features.unsqueeze(dim=1), cap_embedding), dim=1)
 
         lstm_out, _ = self.lstm(embeddings)
-
-        lstm_out_concat = lstm_out.reshape(-1, self.hidden_size * 2 if self.bidirectional else self.hidden_size)
-
-        outputs = self.last_linear(lstm_out_concat)
+        outputs = self.last_linear(lstm_out)
 
         return outputs
 
@@ -193,6 +190,8 @@ if __name__ == '__main__':
 
             # Calculating the batch loss.
             loss = criterion(outputs.view(-1, vocab_size), captions.view(-1))
+
+            
 
             # Backwarding pass
             loss.backward()

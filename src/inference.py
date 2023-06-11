@@ -43,8 +43,8 @@ image_captioner = ImageCaptioner(embedding_size, hidden_size, vocab_size)
 image_captioner.eval()
 
 image_captioner.to(device)
-image_captioner.CNN.load_state_dict(torch.load("../models/encoder-10.pkl", map_location=torch.device(device)))
-image_captioner.RNN.load_state_dict(torch.load("../models/decoder-10.pkl", map_location=torch.device(device)))
+image_captioner.CNN.load_state_dict(torch.load("../models/efficientnetB7_defaultRNN/encoder-12.pkl", map_location=torch.device(device)))
+image_captioner.RNN.load_state_dict(torch.load("../models/efficientnetB7_defaultRNN/decoder-12.pkl", map_location=torch.device(device)))
 
 
 original_image_folder = f"../data/cocoapi/images/val{cocoapi_year}/"
@@ -63,16 +63,19 @@ for i in range(images_to_load):
     image, token_caption, filename = next(iter(data_loader))
     token_caption = token_caption.tolist()[0]
     caption = clean_sentence(token_caption, data_loader.dataset.vocab.idx2word)
-    print(f"ORIGINAL CAPTION: {caption}")
-
-    original_image = Image.open(original_image_folder + filename[0])
-    plt.imshow(original_image)
-    plt.show()
+    # print(f"ORIGINAL CAPTION: {caption}")
 
     image = image.to(device)
     features = image_captioner.CNN(image).unsqueeze(1)
     output = image_captioner.RNN.sample(features)
     predicted_caption = clean_sentence(output, data_loader.dataset.vocab.idx2word)
-    print(f"PREDICTED CAPTION {predicted_caption}")
+    # print(f"PREDICTED CAPTION {predicted_caption}")
+    label = f"ORIGINAL CAPTION: {caption}\n" + \
+            f"PREDICTED CAPTION: {predicted_caption}"
+    
+    original_image = Image.open(original_image_folder + filename[0])
+    plt.imshow(original_image)
+    plt.xlabel(label)
+    plt.show()
 
      
