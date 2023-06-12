@@ -16,9 +16,9 @@ class EncoderCNN(nn.Module):
         """Returns fully-connected layer(s) added to the pretrained CNN.
         """
 
-    @property
-    def pretrained_cnn(self) -> nn.Module:
-        """Returns the pretrained CNN used as a base to extract image features.
+    def pretrained_cnn(self, input: torch.Tensor) -> torch.Tensor:
+        """Calls the pretrained CNN used as a base to extract image features
+        with an input batch.
         """
 
 
