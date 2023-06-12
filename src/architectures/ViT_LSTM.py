@@ -49,7 +49,7 @@ class ViT_LSTM(ImageCaptioner):
             hidden_size,
             embed_size,
             vocabulary_size,
-            num_layers=3,
+            num_layers=5,
             bidirectional=bidirectional_lstm,
         )
 

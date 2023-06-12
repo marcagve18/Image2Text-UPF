@@ -121,10 +121,10 @@ if __name__ == "__main__":
     data_loader = get_loader(
         image_folder=f"../clean_data/train{cocoapi_year}/",
         annotations_file=f"../data/cocoapi/annotations/captions_train{cocoapi_year}.json",
-        batch_size=128,
-        vocab_threshold=5,  # minimum word count threshold
-        vocab_from_file=True,  # if True, load existing vocab file
-        ratio=0.001,
+        batch_size=180,
+        vocab_threshold=5, # minimum word count threshold
+        vocab_from_file=True, # if True, load existing vocab file
+        ratio=1, # proportion of coco dataset to use
     )
 
     # Initializing image captioning models
