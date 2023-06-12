@@ -10,19 +10,14 @@ from architectures.vgg_gpt2 import CocoDataset, CaptionGenerator
 
 cocoapi_year = 2017
 
-image_transform = transforms.Compose([
-    transforms.Resize((224, 224)),
-    transforms.ToTensor(),
-    transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
-])
 
 train_image_dir = f"../data/cocoapi/images/train{cocoapi_year}"
 train_captions_file = f"../data/cocoapi/annotations/captions_train{cocoapi_year}.json"
-train_dataset = CocoDataset(train_image_dir, train_captions_file, transform=image_transform)
+train_dataset = CocoDataset(train_image_dir, train_captions_file)
 
 val_image_dir = f"../data/cocoapi/images/val{cocoapi_year}"
 val_captions_file = f"../data/cocoapi/annotations/captions_val{cocoapi_year}.json"
-val_dataset = CocoDataset(val_image_dir, val_captions_file, transform=image_transform)
+val_dataset = CocoDataset(val_image_dir, val_captions_file)
 
 # Data loaders for training and validation
 batch_size = 32

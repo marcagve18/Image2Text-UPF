@@ -7,6 +7,8 @@ from PIL import Image
 from transformers import GPT2LMHeadModel
 from torch.utils.data import Dataset
 import skimage.io as io
+from torchvision import transforms
+import random
 
 
 class VGG(nn.Module):
@@ -60,11 +62,10 @@ class CaptionGenerator(nn.Module):
 
 
 class CocoDataset(Dataset):
-    def __init__(self, image_dir, captions_file, transform=None):
+    def __init__(self, image_dir, captions_file):
         self.image_dir = image_dir
         self.coco = COCO(captions_file)
         self.image_ids = list(self.coco.imgs.keys())
-        self.transform = transform
 
     def __len__(self):
         return len(self.image_ids)
@@ -75,11 +76,16 @@ class CocoDataset(Dataset):
         url = image_info["coco_url"]
         image = Image.fromarray(io.imread(url))
         
-        if self.transform:
-            image = self.transform(image)
+        transform = transforms.Compose([
+            transforms.Resize((224, 224)),
+            transforms.ToTensor(),
+            transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
+        ])
+        image = transform(image)
 
         caption_ids = self.coco.getAnnIds(image_id)
         caption = [self.coco.anns[cid]['caption'] for cid in caption_ids]
-        caption = self.coco.anns[caption_ids[0]]['caption']
+        caption_idx = random.randint(0, len(caption_ids)-1)
+        caption = self.coco.anns[caption_idx]['caption']
         
         return image, caption
