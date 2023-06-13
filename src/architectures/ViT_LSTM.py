@@ -20,7 +20,9 @@ class ViT_LSTM_CNN(EncoderCNN):
 
         # Remove the last classification layer of the model
         # https://discuss.pytorch.org/t/assertionerror-expected-batch-size-seq-length-hidden-dim-got-torch-size-1-768-24-31/150869/4
-        self.__feature_extractor = create_feature_extractor(vit, return_nodes=['getitem_5'])
+        self.__feature_extractor = create_feature_extractor(
+            vit, return_nodes=["getitem_5"]
+        )
 
         # Add new Linear layers to adapt model to image captioning.
         self.__fc = nn.Sequential(
@@ -32,15 +34,20 @@ class ViT_LSTM_CNN(EncoderCNN):
         return self.__fc
 
     def pretrained_cnn(self, input: torch.Tensor) -> torch.Tensor:
-        return self.__feature_extractor(input)['getitem_5']
+        return self.__feature_extractor(input)["getitem_5"]
 
 
 class ViT_LSTM(ImageCaptioner):
     def __init__(
-        self, embed_size, hidden_size, vocabulary_size, bidirectional_lstm=False
+        self,
+        embed_size,
+        hidden_size,
+        lstm_layers,
+        vocabulary_size,
+        bidirectional_lstm=False,
     ) -> None:
         super().__init__()
-        self.__name = "ViT_LSTM"
+        self.__name = f"ViT_LSTM_e{embed_size}_h{hidden_size}_l{lstm_layers}"
         if bidirectional_lstm:
             self.__name += "_bidirectional"
 
@@ -49,7 +56,7 @@ class ViT_LSTM(ImageCaptioner):
             hidden_size,
             embed_size,
             vocabulary_size,
-            num_layers=5,
+            num_layers=lstm_layers,
             bidirectional=bidirectional_lstm,
         )
 

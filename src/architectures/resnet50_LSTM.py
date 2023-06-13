@@ -30,10 +30,15 @@ class R50_LSTM_CNN(EncoderCNN):
 
 class R50_LSTM(ImageCaptioner):
     def __init__(
-        self, embed_size, hidden_size, vocabulary_size, bidirectional_lstm=False
+        self,
+        embed_size,
+        hidden_size,
+        lstm_layers,
+        vocabulary_size,
+        bidirectional_lstm=False,
     ) -> None:
         super().__init__()
-        self.__name = "resnet50_LSTM"
+        self.__name = f"resnet50_LSTM_e{embed_size}_h{hidden_size}_l{lstm_layers}"
         if bidirectional_lstm:
             self.__name += "_bidirectional"
 
@@ -42,7 +47,7 @@ class R50_LSTM(ImageCaptioner):
             hidden_size,
             embed_size,
             vocabulary_size,
-            num_layers=1,
+            num_layers=lstm_layers,
             bidirectional=bidirectional_lstm,
         )
 

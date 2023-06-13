@@ -2,6 +2,7 @@ from typing import Iterator
 import torch.nn as nn
 import torch
 from torch.nn.parameter import Parameter
+from abc import abstractmethod
 
 
 class EncoderCNN(nn.Module):
@@ -12,27 +13,43 @@ class EncoderCNN(nn.Module):
         return features
 
     @property
+    @abstractmethod
     def fc(self):
-        """Returns fully-connected layer(s) added to the pretrained CNN.
-        """
+        """Returns fully-connected layer(s) added to the pretrained CNN."""
 
+    @abstractmethod
     def pretrained_cnn(self, input: torch.Tensor) -> torch.Tensor:
-        """Calls the pretrained CNN used as a base to extract image features
-        with an input batch.
+        """Runs a forward pass with the pretrained CNN (only the layers that do
+        not need to be re-trained).
         """
 
 
 class DecoderRNN(nn.Module):
-    def __init__(self, hidden_size, embedding_size, vocabulary_size, num_layers=1, bidirectional=False):
+    def __init__(
+        self,
+        hidden_size,
+        embedding_size,
+        vocabulary_size,
+        num_layers=1,
+        bidirectional=False,
+    ):
         super().__init__()
         self.hidden_size = hidden_size
         self.num_layers = num_layers
         self.bidirectional = bidirectional
         self.vocabulary_embedding = nn.Embedding(vocabulary_size, embedding_size)
-        self.lstm = nn.LSTM(input_size=embedding_size, hidden_size=hidden_size, num_layers=num_layers, bidirectional=bidirectional, batch_first=True)
-        self.last_linear = nn.Linear(hidden_size * 2 if bidirectional else hidden_size, vocabulary_size)
+        self.lstm = nn.LSTM(
+            input_size=embedding_size,
+            hidden_size=hidden_size,
+            num_layers=num_layers,
+            bidirectional=bidirectional,
+            batch_first=True,
+        )
+        self.last_linear = nn.Linear(
+            hidden_size * 2 if bidirectional else hidden_size, vocabulary_size
+        )
 
-    def forward(self, features, captions):    
+    def forward(self, features, captions):
         # Remove <end> token from captions and use embedding to always have the
         # same input size for the LSTM.
         cap_embedding = self.vocabulary_embedding(captions[:, :-1])
@@ -40,11 +57,13 @@ class DecoderRNN(nn.Module):
         # Concatenate the images features to the first of caption embeddings.
         embeddings = torch.cat((features.unsqueeze(dim=1), cap_embedding), dim=1)
 
-        # Pass the combined input data through the network
+        # Pass the combined input data through the network
         lstm_out, _ = self.lstm(embeddings)
-        lstm_out_concat = lstm_out.reshape(-1, self.hidden_size * 2 if self.bidirectional else self.hidden_size)
+        lstm_out_concat = lstm_out.reshape(
+            -1, self.hidden_size * 2 if self.bidirectional else self.hidden_size
+        )
         outputs = self.last_linear(lstm_out_concat)
-        
+
         return outputs
 
     def sample(self, inputs, states=None, max_len=20):
@@ -66,7 +85,9 @@ class DecoderRNN(nn.Module):
             lstm_out, states = self.lstm(
                 inputs, states
             )  # lstm_out: (1, 1, hidden_size)
-            outputs = self.last_linear(lstm_out.squeeze(dim=1))  # outputs: (1, vocab_size)
+            outputs = self.last_linear(
+                lstm_out.squeeze(dim=1)
+            )  # outputs: (1, vocab_size)
             _, predicted_idx = outputs.max(dim=1)  # predicted: (1, 1)
             res.append(predicted_idx.item())
             # if the predicted idx is the stop index, the loop stops
@@ -84,25 +105,22 @@ class ImageCaptioner(nn.Module):
         out_features = self.CNN(images)
         output = self.RNN(out_features, captures)
         return output
-    
+
     def parameters(self, recurse: bool = True) -> Iterator[Parameter]:
-        """Returns the learnable parameters of the model
-        """
+        """Returns the learnable parameters of the model"""
         return list(self.RNN.parameters(recurse)) + list(self.CNN.fc.parameters(recurse))
 
     @property
+    @abstractmethod
     def name(self) -> str:
-        """Returns the name of the model.
-        """
+        """Returns the name of the model."""
 
     @property
+    @abstractmethod
     def CNN(self) -> EncoderCNN:
-        """The CNN encoder used by the model.
-        """
+        """The CNN encoder used by the model."""
 
     @property
+    @abstractmethod
     def RNN(self) -> DecoderRNN:
-        """The RNN decoder used by the model.
-        """
-
-    
+        """The RNN decoder used by the model."""

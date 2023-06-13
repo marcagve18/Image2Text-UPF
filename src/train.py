@@ -121,10 +121,10 @@ if __name__ == "__main__":
     data_loader = get_loader(
         image_folder=f"../clean_data/train{cocoapi_year}/",
         annotations_file=f"../data/cocoapi/annotations/captions_train{cocoapi_year}.json",
-        batch_size=180,
+        batch_size=128,
         vocab_threshold=5, # minimum word count threshold
         vocab_from_file=True, # if True, load existing vocab file
-        ratio=1, # proportion of coco dataset to use
+        ratio=0.001, # proportion of coco dataset to use
     )
 
     # Initializing image captioning models
@@ -132,26 +132,37 @@ if __name__ == "__main__":
     models: List[ImageCaptioner] = []
 
     models.append(R50_LSTM(
-        embed_size=256,  # dimensionality of image and word embeddings
-        hidden_size=512,  # number of features in hidden state of the RNN decoder
+        embed_size=256, # dimensionality of image and word embeddings
+        hidden_size=512, # number of features in hidden state of the RNN decoder
+        lstm_layers=1, # Number of hidden layers of each lstm cell
+        vocabulary_size=vocab_size,
+        bidirectional_lstm=False,
+    ))
+    models.append(EB7_LSTM(
+        embed_size=256, # dimensionality of image and word embeddings
+        hidden_size=512, # number of features in hidden state of the RNN decoder
+        lstm_layers= 3, # Number of hidden layers of each lstm cell
         vocabulary_size=vocab_size,
         bidirectional_lstm=False,
     ))
     models.append(EB7_LSTM(
         embed_size=256,  # dimensionality of image and word embeddings
         hidden_size=512,  # number of features in hidden state of the RNN decoder
-        vocabulary_size=vocab_size,
-        bidirectional_lstm=False,
-    ))
-    models.append(EB7_LSTM(
-        embed_size=256,  # dimensionality of image and word embeddings
-        hidden_size=512,  # number of features in hidden state of the RNN decoder
+        lstm_layers=3, # Number of hidden layers of each lstm cell
         vocabulary_size=vocab_size,
         bidirectional_lstm=True,
     ))
     models.append(ViT_LSTM(
-        embed_size=256,  # dimensionality of image and word embeddings
-        hidden_size=512,  # number of features in hidden state of the RNN decoder
+        embed_size=256, # dimensionality of image and word embeddings
+        hidden_size=512, # number of features in hidden state of the RNN decoder
+        lstm_layers=3, # Number of hidden layers of each lstm cell
+        vocabulary_size=vocab_size,
+        bidirectional_lstm=False,
+    ))
+    models.append(ViT_LSTM(
+        embed_size=256, # dimensionality of image and word embeddings
+        hidden_size=256, # number of features in hidden state of the RNN decoder
+        lstm_layers=5, # Number of hidden layers of each lstm cell
         vocabulary_size=vocab_size,
         bidirectional_lstm=False,
     ))
@@ -163,8 +174,8 @@ if __name__ == "__main__":
             model=image_captioner,
             num_epochs=3,  # number of training epochs
             criterion=nn.CrossEntropyLoss(),
-            checkpoint_folder="../models/", # folder in which to store checkpoints of the training weights
-            log_folder="../logs/",
+            checkpoint_folder="../models2/", # folder in which to store checkpoints of the training weights
+            log_folder="../logs2/",
             save_every=1,  # determines frequency (epochs) of saving model weights
             print_every=20,  # determines frequency (steps) for printing average loss
         )
