@@ -13,11 +13,11 @@ cocoapi_year = 2017
 
 train_image_dir = f"../data/cocoapi/images/train{cocoapi_year}"
 train_captions_file = f"../data/cocoapi/annotations/captions_train{cocoapi_year}.json"
-train_dataset = CocoDataset(train_image_dir, train_captions_file)
+train_dataset = CocoDataset(train_image_dir, train_captions_file, f"../clean_data/train{cocoapi_year}/")
 
 val_image_dir = f"../data/cocoapi/images/val{cocoapi_year}"
 val_captions_file = f"../data/cocoapi/annotations/captions_val{cocoapi_year}.json"
-val_dataset = CocoDataset(val_image_dir, val_captions_file)
+val_dataset = CocoDataset(val_image_dir, val_captions_file, f"../clean_data/train{cocoapi_year}/")
 
 # Data loaders for training and validation
 batch_size = 32

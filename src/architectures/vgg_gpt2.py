@@ -62,10 +62,11 @@ class CaptionGenerator(nn.Module):
 
 
 class CocoDataset(Dataset):
-    def __init__(self, image_dir, captions_file):
+    def __init__(self, image_dir, captions_file, img_folder):
         self.image_dir = image_dir
         self.coco = COCO(captions_file)
         self.image_ids = list(self.coco.imgs.keys())
+        self.img_folder = img_folder
 
     def __len__(self):
         return len(self.image_ids)

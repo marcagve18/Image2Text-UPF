@@ -145,7 +145,7 @@ if __name__ == "__main__":
 
     train_image_dir = f"../data/cocoapi/images/train{cocoapi_year}"
     train_captions_file = f"../data/cocoapi/annotations/captions_train{cocoapi_year}.json"
-    train_dataset = CocoDataset(train_image_dir, train_captions_file)
+    train_dataset = CocoDataset(train_image_dir, train_captions_file, f"../clean_data/train{cocoapi_year}/")
 
     # Data loaders for training and validation
     batch_size = 32
