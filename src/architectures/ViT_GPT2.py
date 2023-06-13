@@ -9,6 +9,7 @@ from .BaseImageCaptioner import EncoderCNN, DecoderRNN, ImageCaptioner
 
 class GPT2(nn.Module):
     def __init__(self):
+        super()._init_()
         self.gpt2_model = GPT2LMHeadModel.from_pretrained('gpt2')
         self.gpt2_model.config.add_cross_attention = True
 

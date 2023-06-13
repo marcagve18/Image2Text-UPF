@@ -49,13 +49,6 @@ def train(
 
     for epoch in range(1, num_epochs + 1):
         for i_step in range(1, total_step + 1):
-            # Randomly sample a caption length, and sample indices with that length.
-            indices = data_loader.dataset.get_train_indices()
-
-            # Create and assign a batch sampler to retrieve a batch with the sampled indices.
-            new_sampler = data.sampler.SubsetRandomSampler(indices=indices)
-            data_loader.batch_sampler.sampler = new_sampler
-
             # Obtain the batch.
             images, captions, _ = next(iter(data_loader))
 
@@ -137,7 +130,7 @@ def train(
 
 
 if __name__ == "__main__":
-    from architectures import ViT_GPT2
+    from architectures.ViT_GPT2 import ViT_GPT2
     from architectures.VGG_GPT2 import CocoDataset
 
     # Build data loader.
