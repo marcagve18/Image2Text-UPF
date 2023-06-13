@@ -67,7 +67,7 @@ In the end, your directory structure should be the following:
 * `predictions` contains the inference results of our best model in nocaps format.
 * `src` contains all the source code 
 
-### 4. Initial idea : ViT & GPT2
+## 4. Initial idea : ViT & GPT2
 
 First of all we started by gathering information about the state of the art models that were performing better in image captioning. These have complex architectures that we considered to be out of the scope of the project, due to lack of time and advanced knowledge. 
 
@@ -98,13 +98,13 @@ After training the model for some time we realized that the loss was too high, s
 
 This is the most used architecture as a starting point to image captioning. Therefore, we used an already existing [github project](https://github.com/iamirmasoud/image_captioning) as template, from which we could start doing different experiments.
 
-### Imagenet with a simple RNN
+### Resnet50 with a simple RNN
 
 This is the architecture used by the aforementioned project, which we used as a "base model" to compare the performance with. 
 
 <span style="color:red">// TODO : explicar alguna cosa més!</span>
 
-### EfficientnetB7 with bidirectional LSTMs
+### EfficientNet-B7 with bidirectional LSTMs
 
 The performance of the previous model was not bad at all but we were convinced that we could do some adjustments to improve it. So, after doing some research we found out that `EfficientnetB7` was a recent model of image classification that despite not having a huge amount of parameters performed very well. Apart from that, we also decided to use a more complex architecture in the decoder, so we implemented a bidirectional LSTM that we had already worked with in the past.
 
@@ -155,11 +155,7 @@ To be able to submit the results, we require our model to generate the captions 
 
 After having preprocessed the data as explained in section 7.1, the desired file can be obtained executing the `metrics.py` script. The following table shows the results of our models
 
-| Header 1 | Header 2 | Header 3 |
-| -------- | -------- | -------- |
-| Cell 1   | Cell 2   | Cell 3   |
-| Cell 4   | <th colspan="2">These two cells have been merged together</th> ||
-| Cell 1   | Cell 2   | Cell 3   |
+
 
 ## 8. Conclusions
 
