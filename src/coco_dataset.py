@@ -5,6 +5,7 @@ from pycocotools.coco import COCO
 from torch.utils import data as data
 from tqdm import tqdm
 import random
+from tokenizer import Tokenizer
 
 from vocabulary import Vocabulary
 
@@ -15,26 +16,12 @@ class CoCoDataset(data.Dataset):
         img_folder,
         annotations_file,
         batch_size,
-        vocab_threshold,
-        vocab_file,
-        start_word,
-        end_word,
-        unk_word,
-        vocab_from_file,
+        tokenizer: Tokenizer,
         ratio=0.1,
     ):
         self.img_folder = img_folder
         self.batch_size = batch_size
-        # create vocabulary from the captions
-        self.vocab = Vocabulary(
-            vocab_threshold,
-            vocab_file,
-            start_word,
-            end_word,
-            unk_word,
-            annotations_file,
-            vocab_from_file,
-        )
+        self.tokenizer = tokenizer
         
         self.coco = COCO(annotations_file)
         num_images = len(self.coco.imgs)
@@ -52,17 +39,12 @@ class CoCoDataset(data.Dataset):
         # Get list of tokens for each caption
         print("Obtaining caption lengths...")
         tokenized_captions = [
-            nltk.tokenize.word_tokenize(
-                str(self.coco.anns[self.ids[index]]["caption"]).lower()
-            )
+            tokenizer.tokenize(self.coco.anns[self.ids[index]]["caption"])
             for index in tqdm(np.arange(len(self.ids)))
         ]
 
         # get len of each caption
-        self.caption_lengths = [len(token) for token in tokenized_captions]
-
-        # Pad all captions with <end> token so that all of them have the same length
-        self.max_length = max(self.caption_lengths)
+        self.caption_lengths = [token.shape[0] for token in tokenized_captions]
       
 
     def __getitem__(self, index):
@@ -87,15 +69,11 @@ class CoCoDataset(data.Dataset):
         # image = Image.fromarray(io.imread(url)).convert("RGB")
 
         # Convert caption to tensor of word ids.
-        tokens = nltk.tokenize.word_tokenize(str(caption).lower())
-        caption = [self.vocab(self.vocab.start_word)]
-        caption.extend([self.vocab(token) for token in tokens])
-        caption.append(self.vocab(self.vocab.end_word))
-        caption = torch.Tensor(caption).long()
+        tokens = self.tokenizer.tokenize(caption)
 
         # return pre-processed image, caption tensors and image path for testing the model
         image_filename = path.split('.pt')[0]
-        return image, caption, image_filename
+        return image, tokens, image_filename
   
     
     def get_train_indices(self):

@@ -45,18 +45,19 @@ def train(
     f = open(log_folder + model.name + ".log", "w")
 
     tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
-    tokenizer.add_special_tokens({'pad_token': tokenizer.eos_token})    
+    tokenizer.add_special_tokens({'pad_token': tokenizer.eos_token})
 
     for epoch in range(1, num_epochs + 1):
         for i_step in range(1, total_step + 1):
             # Obtain the batch.
-            images, captions, _ = next(iter(data_loader))
+            images, captions = next(iter(data_loader))
 
             # Tokenizing the captions of the batch
-            captions = [tokenizer(caption, return_tensors="pt").input_ids for caption in captions ]
+            captions = [tokenizer(caption, return_tensors="pt").input_ids for caption in captions]
 
             # Move batch of images and captions to GPU if CUDA is available.
             images = images.to(device)
+            print([caption.shape for caption in captions])
             captions = captions.to(device)
 
             # Forward - backward pass
@@ -131,10 +132,10 @@ def train(
 
 if __name__ == "__main__":
     from architectures.ViT_GPT2 import ViT_GPT2
-    from architectures.vgg_GPT2 import CocoDataset
+    from architectures.VGG_GPT2 import CocoDataset
 
     # Build data loader.
-    cocoapi_year = "2017"
+    cocoapi_year = "2014"
 
     train_image_dir = f"../data/cocoapi/images/train{cocoapi_year}"
     train_captions_file = f"../data/cocoapi/annotations/captions_train{cocoapi_year}.json"

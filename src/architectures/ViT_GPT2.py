@@ -9,27 +9,37 @@ from .BaseImageCaptioner import EncoderCNN, DecoderRNN, ImageCaptioner
 
 class GPT2(nn.Module):
     def __init__(self):
-        super()._init_()
+        super().__init__()
         self.gpt2_model = GPT2LMHeadModel.from_pretrained('gpt2')
         self.gpt2_model.config.add_cross_attention = True
 
     def forward(self, features, captions):
-        prediction_outputs = []
-        for image_feature, caption in zip(features, captions):
-            # Step 1: Extracting the embeddings of the captions
-            embeds = self.gpt2_model.transformer.wte.weight[caption, :]
+        # prediction_outputs = []
 
-            # Step 2: Combine image features and caption tokens
-            # We add the image features at the start of each sequence (image_features are tensors of the appropriate size)
-            embeds = torch.cat((image_feature.unsqueeze(0).unsqueeze(0), embeds), dim=1)
+        # Step 1: Extracting the embeddings of the captions
+        embeds = self.gpt2_model.transformer.wte.weight[captions, :]
 
-            # Step 3: Forward pass through GPT-2 model
-            outputs = self.gpt2_model(inputs_embeds = embeds)
-            predicted_token_ids = torch.argmax(outputs.logits, dim=-1)
-            prediction_outputs.append(predicted_token_ids)
-            
+        # Step 2: Combine image features and caption tokens
+        # We add the image features at the start of each sequence (image_features are tensors of the appropriate size)
+        embeds = torch.cat((features.unsqueeze(dim=1), embeds), dim=1)
+        
 
-        return prediction_outputs
+        # Step 3: Forward pass through GPT-2 model
+        outputs = self.gpt2_model.generate(inputs_embeds = embeds)
+        # predicted_token_ids = torch.argmax(outputs.logits, dim=-1)
+        # prediction_outputs.append(predicted_token_ids)
+
+        # max_output = max([caption.shape[0] for caption in prediction_outputs])
+
+        # outputs = torch.Tensor()
+        # for predicted_caption in prediction_outputs: 
+        #     output_tensor = predicted_caption   
+        #     if predicted_caption.shape[0] < max_output:
+        #         needed_padding = max_output - predicted_caption.shape[0]
+        #         output_tensor = torch.functional.pad(predicted_caption, (needed_padding, 0, 0, 0), value=)
+        #     outputs.cat()
+
+        return outputs.tensor
 
 
 class ViT(EncoderCNN):
@@ -62,12 +72,11 @@ class ViT(EncoderCNN):
 
 
 class ViT_GPT2(ImageCaptioner):
-    def __init__(
-        self,
-    ) -> None:
+    def __init__(self, vocab_size, embed_size=768) -> None:
         super().__init__()
         self.__name = "ViT_GPT2"
-        self.__CNN = ViT(768)
+        self.__vocab_size = vocab_size
+        self.__CNN = ViT(embed_size=embed_size)
         self.__RNN = GPT2()
 
     @property
@@ -81,3 +90,7 @@ class ViT_GPT2(ImageCaptioner):
     @property
     def RNN(self) -> DecoderRNN:
         return self.__RNN
+    
+    @property
+    def vocab_size(self) -> int:
+        return self.__vocab_size

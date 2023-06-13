@@ -10,7 +10,6 @@ from architectures import ImageCaptioner
 import torchinfo
 from typing import List
 
-
 def train(
     data_loader: data.DataLoader,
     model: ImageCaptioner,
@@ -65,7 +64,7 @@ def train(
             )  # Passing the inputs through the CNN-RNN model
 
             loss = criterion(
-                outputs.view(-1, vocab_size), captions.view(-1)
+                outputs.view(-1, model.vocab_size), captions.view(-1)
             )  # Calculating the batch loss.
             loss.backward()  # Backwarding pass
             optimizer.step()  # Updating the parameters in the optimizer
@@ -114,58 +113,70 @@ def train(
 
 
 if __name__ == "__main__":
-    from architectures import EB7_LSTM, R50_LSTM, ViT_LSTM
+    from architectures import EB7_LSTM, R50_LSTM, ViT_LSTM, ViT_GPT2
+    from tokenizer import NltkTokenizer, Gpt2Tokenizer
 
     # Build data loader.
-    cocoapi_year = "2017"
+    cocoapi_year = "2014"
+    tokenizer = NltkTokenizer(vocab_threshold=5, vocab_file="./vocab.pkl")
+    gpt2_tokenizer = Gpt2Tokenizer()
+    
     data_loader = get_loader(
         image_folder=f"../clean_data/train{cocoapi_year}/",
         annotations_file=f"../data/cocoapi/annotations/captions_train{cocoapi_year}.json",
-        batch_size=150,
-        vocab_threshold=5, # minimum word count threshold
-        vocab_from_file=True, # if True, load existing vocab file
-        ratio=1, # proportion of coco dataset to use
+        batch_size=128,
+        tokenizer=tokenizer,
+        ratio=0.01, # proportion of coco dataset to use
+    )
+
+    gpt2_data_loader = get_loader(
+        image_folder=f"../clean_data/train{cocoapi_year}/",
+        annotations_file=f"../data/cocoapi/annotations/captions_train{cocoapi_year}.json",
+        batch_size=64,
+        tokenizer=gpt2_tokenizer,
+        ratio=0.01, # proportion of coco dataset to use
     )
 
     # Initializing image captioning models
-    vocab_size = len(data_loader.dataset.vocab)  # The size of the vocabulary
+    
     models: List[ImageCaptioner] = []
 
     # models.append(R50_LSTM(
     #     embed_size=256, # dimensionality of image and word embeddings
     #     hidden_size=512, # number of features in hidden state of the RNN decoder
     #     lstm_layers=1, # Number of hidden layers of each lstm cell
-    #     vocabulary_size=vocab_size,
+    #     vocab_size=tokenizer.vocab_size(),
     #     bidirectional_lstm=False,
     # ))
-    models.append(EB7_LSTM(
-        embed_size=256, # dimensionality of image and word embeddings
-        hidden_size=512, # number of features in hidden state of the RNN decoder
-        lstm_layers= 3, # Number of hidden layers of each lstm cell
-        vocabulary_size=vocab_size,
-        bidirectional_lstm=False,
-    ))
+    # models.append(EB7_LSTM(
+    #     embed_size=256, # dimensionality of image and word embeddings
+    #     hidden_size=512, # number of features in hidden state of the RNN decoder
+    #     lstm_layers= 3, # Number of hidden layers of each lstm cell
+    #     vocab_size=tokenizer.vocab_size(),
+    #     bidirectional_lstm=False,
+    # ))
     # models.append(EB7_LSTM(
     #     embed_size=256,  # dimensionality of image and word embeddings
     #     hidden_size=512,  # number of features in hidden state of the RNN decoder
     #     lstm_layers=3, # Number of hidden layers of each lstm cell
-    #     vocabulary_size=vocab_size,
+    #     vocab_size=tokenizer.vocab_size(),
     #     bidirectional_lstm=True,
     # ))
     # models.append(ViT_LSTM(
     #     embed_size=256, # dimensionality of image and word embeddings
     #     hidden_size=512, # number of features in hidden state of the RNN decoder
     #     lstm_layers=3, # Number of hidden layers of each lstm cell
-    #     vocabulary_size=vocab_size,
+    #     vocab_size=tokenizer.vocab_size(),
     #     bidirectional_lstm=False,
     # ))
     # models.append(ViT_LSTM(
     #     embed_size=256, # dimensionality of image and word embeddings
     #     hidden_size=256, # number of features in hidden state of the RNN decoder
     #     lstm_layers=5, # Number of hidden layers of each lstm cell
-    #     vocabulary_size=vocab_size,
+    #     vocab_size=tokenizer.vocab_size(),
     #     bidirectional_lstm=False,
     # ))
+    models.append(ViT_GPT2(vocab_size=gpt2_tokenizer.vocab_size()))
 
     # Train the model
     for image_captioner in models:

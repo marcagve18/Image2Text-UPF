@@ -124,3 +124,8 @@ class ImageCaptioner(nn.Module):
     @abstractmethod
     def RNN(self) -> DecoderRNN:
         """The RNN decoder used by the model."""
+
+    @property
+    @abstractmethod
+    def vocab_size(self) -> int:
+        """Returns the size of the vocabulary used by the model."""

@@ -42,7 +42,7 @@ class EB7_LSTM(ImageCaptioner):
         embed_size,
         hidden_size,
         lstm_layers,
-        vocabulary_size,
+        vocab_size,
         bidirectional_lstm=False,
     ) -> None:
         super().__init__()
@@ -50,11 +50,12 @@ class EB7_LSTM(ImageCaptioner):
         if bidirectional_lstm:
             self.__name += "_bidirectional"
 
+        self.__vocab_size = vocab_size
         self.__CNN = EB7_LSTM_CNN(embed_size)
         self.__RNN = DecoderRNN(
             hidden_size,
             embed_size,
-            vocabulary_size,
+            vocab_size,
             num_layers=lstm_layers,
             bidirectional=bidirectional_lstm,
         )
@@ -70,3 +71,7 @@ class EB7_LSTM(ImageCaptioner):
     @property
     def RNN(self) -> DecoderRNN:
         return self.__RNN
+    
+    @property
+    def vocab_size(self) -> int:
+        return self.__vocab_size
