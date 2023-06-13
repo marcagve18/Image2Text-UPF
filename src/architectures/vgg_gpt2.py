@@ -72,16 +72,12 @@ class CocoDataset(Dataset):
 
     def __getitem__(self, index):
         image_id = self.image_ids[index]
-        image_info = self.coco.loadImgs(image_id)[0]
-        url = image_info["coco_url"]
-        image = Image.fromarray(io.imread(url))
-        
-        transform = transforms.Compose([
-            transforms.Resize((224, 224)),
-            transforms.ToTensor(),
-            transforms.Normalize((0.485, 0.456, 0.406), (0.229, 0.224, 0.225))
-        ])
-        image = transform(image)
+        ############ LOAD IMAGES FROM FILES ############
+        # NOTE: We have decided to first convert the images to tensors to save
+        # computation time in the training phase. Therefore, we load the
+        # tensors from a separate folder
+        path = self.coco.loadImgs(image_id)[0]["file_name"] + ".pt"
+        image = torch.load(self.img_folder+path)
 
         caption_ids = self.coco.getAnnIds(image_id)
         caption = [self.coco.anns[cid]['caption'] for cid in caption_ids]

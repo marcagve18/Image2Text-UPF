@@ -138,7 +138,7 @@ def train(
 
 if __name__ == "__main__":
     from architectures import ViT_GPT2
-    from architectures.vgg_gpt2 import CocoDataset
+    from architectures.VGG_GPT2 import CocoDataset
 
     # Build data loader.
     cocoapi_year = "2017"

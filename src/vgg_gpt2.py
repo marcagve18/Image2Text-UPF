@@ -5,7 +5,7 @@ from torchvision import transforms
 from transformers import GPT2Tokenizer
 from torch.utils.data import DataLoader
 from torch.utils.data import DataLoader
-from architectures.vgg_gpt2 import CocoDataset, CaptionGenerator
+from architectures.VGG_GPT2 import CocoDataset, CaptionGenerator
 
 
 cocoapi_year = 2017
