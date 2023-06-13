@@ -6,7 +6,8 @@ import torch
 from torchvision import transforms
 import skimage.io as io
 import MyTorchWrapper as mtw
-from cnn_rnn import ImageCaptioner
+from architectures.resnet50_LSTM import R50_LSTM
+from architectures import EB7_LSTM
 from tqdm import tqdm
 import os
 
@@ -99,8 +100,8 @@ def clean_sentence(output, idx2word):
 if __name__ == '__main__':
     device = mtw.get_torch_device(use_gpu=True, debug=True)
 
-    model_name = "efficientnetB7_defaultRNN"
-    model_epoch = "12"
+    model_name = "efficientnetB7_LSTM_e256_h512_l3"
+    model_epoch = "4"
 
     transform = transforms.Compose([
         transforms.Resize(256),
@@ -144,12 +145,18 @@ if __name__ == '__main__':
     hidden_size = 512
     vocab_size = len(data_loader.dataset.vocab)
 
-    image_captioner = ImageCaptioner(embedding_size, hidden_size, vocab_size)
+    image_captioner = EB7_LSTM(
+        embed_size=256, # dimensionality of image and word embeddings
+        hidden_size=512, # number of features in hidden state of the RNN decoder
+        lstm_layers= 3, # Number of hidden layers of each lstm cell
+        vocab_size=vocab_size,
+        bidirectional_lstm=False,
+    )
     image_captioner.eval()
 
     image_captioner.to(device)
-    image_captioner.CNN.load_state_dict(torch.load(f"../models/{model_name}/encoder-{model_epoch}.pkl", map_location=torch.device(device)))
-    image_captioner.RNN.load_state_dict(torch.load(f"../models/{model_name}/decoder-{model_epoch}.pkl", map_location=torch.device(device)))
+    image_captioner.CNN.load_state_dict(torch.load(f"../models/{model_name}/encoder-epoch{model_epoch}.pkl", map_location=torch.device(device)))
+    image_captioner.RNN.load_state_dict(torch.load(f"../models/{model_name}/decoder-epoch{model_epoch}.pkl", map_location=torch.device(device)))
 
 
     # Run inference and store the result

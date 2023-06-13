@@ -45,18 +45,18 @@ if __name__ == '__main__':
     vocab_size = len(tokenizer.vocab)  # The size of the vocabulary
     models: List[ImageCaptioner] = []
 
-    # models.append(R50_LSTM(
-    #     embed_size=256, # dimensionality of image and word embeddings
-    #     hidden_size=512, # number of features in hidden state of the RNN decoder
-    #     lstm_layers=1, # Number of hidden layers of each lstm cell
-    #     vocabulary_size=vocab_size,
-    #     bidirectional_lstm=False,
-    # ))
+    models.append(R50_LSTM(
+        embed_size=256, # dimensionality of image and word embeddings
+        hidden_size=512, # number of features in hidden state of the RNN decoder
+        lstm_layers=1, # Number of hidden layers of each lstm cell
+        vocab_size=vocab_size,
+        bidirectional_lstm=False,
+    ))
     models.append(EB7_LSTM(
         embed_size=256, # dimensionality of image and word embeddings
         hidden_size=512, # number of features in hidden state of the RNN decoder
         lstm_layers= 3, # Number of hidden layers of each lstm cell
-        vocabulary_size=vocab_size,
+        vocab_size=vocab_size,
         bidirectional_lstm=False,
     ))
     # models.append(EB7_LSTM(
@@ -85,8 +85,8 @@ if __name__ == '__main__':
     for image_captioner in models:
         image_captioner.eval()
         image_captioner.to(device)
-        image_captioner.CNN.load_state_dict(torch.load(f"../models/{image_captioner.name}/encoder-epoch3.pkl", map_location=torch.device(device)))
-        image_captioner.RNN.load_state_dict(torch.load(f"../models/{image_captioner.name}/decoder-epoch3.pkl", map_location=torch.device(device)))
+        image_captioner.CNN.load_state_dict(torch.load(f"../models/{image_captioner.name}/encoder-epoch4.pkl", map_location=torch.device(device)))
+        image_captioner.RNN.load_state_dict(torch.load(f"../models/{image_captioner.name}/decoder-epoch4.pkl", map_location=torch.device(device)))
 
 
     # Check the captions for a small sample of images
