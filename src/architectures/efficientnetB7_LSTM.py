@@ -21,10 +21,10 @@ class EB7_LSTM_CNN(EncoderCNN):
 
         # Add new Linear layers to adapt model to image captioning.
         self.__fc = nn.Sequential(
-            nn.Dropout(0.5, inplace=True),
+            nn.Dropout(0.5),
             nn.Linear(efficientnet_b7.classifier[-1].in_features, 1000, bias=True),
-            nn.SiLU(inplace=True),
-            nn.Dropout(0.5, inplace=True),
+            nn.ReLU(),
+            nn.Dropout(0.5),
             nn.Linear(1000, embed_size, bias=True),
         )
 
