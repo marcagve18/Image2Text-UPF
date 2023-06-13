@@ -153,7 +153,13 @@ To be able to submit the results, we require our model to generate the captions 
 ]
 ```
 
-After having preprocessed the data as explained [here](#7.1.-preprocessing), the desired file can be obtained executing the `metrics.py` script. The following table shows the results of our models
+After having preprocessed the data as explained in section 7.1, the desired file can be obtained executing the `metrics.py` script. The following table shows the results of our models
+
+| Header 1 | Header 2 | Header 3 |
+| -------- | -------- | -------- |
+| Cell 1   | Cell 2   | Cell 3   |
+| Cell 4   | <th colspan="2">These two cells have been merged together</th> ||
+| Cell 1   | Cell 2   | Cell 3   |
 
 ## 8. Conclusions
 
