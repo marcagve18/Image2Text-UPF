@@ -125,7 +125,9 @@ Natural language models' performance are measured with the usage of **metrics**.
 - BLEU: it is an acronym for Bilingual Evaluation Understudy. It measures the overlap between a predicted caption  and one or more reference captions. It considers n-grams (sequences of words) of varying lengths. The BLEU score is a number that ranges from $0$ to $100$. The higher the BLEU score, the better the quality of our predicted caption is. BLEU score in the range of $40-60$ are already considered to be high-quality translations. Comparisons between different BLEU scores have to be carefully done, as they are only justifiable under certain conditions such as using the same testing set and the same language pair.
   
   $$\text{BLEU} = \text{BP} \cdot \exp{\left(\sum_{n=1}^N w_n\log p_n\right)}$$
-  where $\mathrm{BP}= \begin{cases}1 & \text { if } c>r \\ e^{(1-r / c)} & \text { if } c \leq r\end{cases}$ is brevity penalty, $c$ is the length of the predicted caption, $r$ is the length of the original one, $w_n$ are positive weights adding up to 1 and $p_n$ is the modified $n$-gram precision. More information can be found on the [original paper](https://aclanthology.org/P02-1040.pdf) of the metric.
+  where
+  $$\mathrm{BP}= \begin{cases}1 & \text { if } c>r \\ e^{(1-r / c)} & \text { if } c \leq r\end{cases}$$
+  is brevity penalty, $c$ is the length of the predicted caption, $r$ is the length of the original one, $w_n$ are positive weights adding up to 1 and $p_n$ is the modified $n$-gram precision. More information can be found on the [original paper](https://aclanthology.org/P02-1040.pdf) of the metric.
 - ROUGE: it stands for Recall-Oriented Understudy for Gisting Evaluation is a set of metrics used to evaluate the quality of text summarization. It measures the overlap between the predicted summary and one or more reference summaries, considering n-grams of different lengths. For this project, text summaries are the captions. More information can be found [here](https://aclanthology.org/W04-1013.pdf).
 - CIDEr: the Consensus-based Image Description Evaluation is another metric **specifically designed for image captioning**. It considers both the content relevance and the linguistic quality of the captions and it takes into account consensus among multiple human captions, recognizing that there can be multiple valid ways to describe an image. To know more information, refer to the original [paper](https://arxiv.org/pdf/1411.5726.pdf).
 
@@ -135,7 +137,7 @@ Other metrics: [METEOR](https://aclanthology.org/W05-0909.pdf), [Perplexity](htt
 
 To be able to submit the results, we require our model to generate the captions for all the [validation nocaps dataset](https://s3.amazonaws.com/nocaps/nocaps_val_image_info.json) and store them in a `.json` file with the following format
 
-```json
+```code
 [
     {
 		"image_id": 0,
@@ -151,7 +153,7 @@ To be able to submit the results, we require our model to generate the captions 
 ]
 ```
 
-After having preprocessed the data as explained [here](###7.1. Preprocessing), the desired file can be obtained executing the `metrics.py` script. The following table shows the results of our models
+After having preprocessed the data as explained [here](#7.1.-preprocessing), the desired file can be obtained executing the `metrics.py` script. The following table shows the results of our models
 
 ## 8. Conclusions
 
