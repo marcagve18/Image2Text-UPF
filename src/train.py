@@ -126,16 +126,16 @@ if __name__ == "__main__":
         annotations_file=f"../data/cocoapi/annotations/captions_train{cocoapi_year}.json",
         batch_size=128,
         tokenizer=tokenizer,
-        ratio=0.01, # proportion of coco dataset to use
+        ratio=1, # proportion of coco dataset to use
     )
 
-    gpt2_data_loader = get_loader(
-        image_folder=f"../clean_data/train{cocoapi_year}/",
-        annotations_file=f"../data/cocoapi/annotations/captions_train{cocoapi_year}.json",
-        batch_size=64,
-        tokenizer=gpt2_tokenizer,
-        ratio=0.01, # proportion of coco dataset to use
-    )
+    # gpt2_data_loader = get_loader(
+    #     image_folder=f"../clean_data/train{cocoapi_year}/",
+    #     annotations_file=f"../data/cocoapi/annotations/captions_train{cocoapi_year}.json",
+    #     batch_size=64,
+    #     tokenizer=gpt2_tokenizer,
+    #     ratio=0.01, # proportion of coco dataset to use
+    # )
 
     # Initializing image captioning models
     

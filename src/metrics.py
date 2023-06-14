@@ -6,10 +6,9 @@ import torch
 from torchvision import transforms
 import skimage.io as io
 import MyTorchWrapper as mtw
-from architectures.resnet50_LSTM import R50_LSTM
-from architectures import EB7_LSTM
 from tqdm import tqdm
 import os
+from tokenizer import NltkTokenizer
 
 class NoCaps(data.Dataset):
     def __init__(
@@ -98,10 +97,11 @@ def clean_sentence(output, idx2word):
 
 
 if __name__ == '__main__':
-    device = mtw.get_torch_device(use_gpu=True, debug=True)
+    from architectures import *
+    from typing import List
 
-    model_name = "efficientnetB7_LSTM_e256_h512_l3_bidirectional"
-    model_epoch = "4"
+
+    device = mtw.get_torch_device(use_gpu=True, debug=True)
 
     transform = transforms.Compose([
         transforms.Resize(256),
@@ -112,7 +112,7 @@ if __name__ == '__main__':
             (0.485, 0.456, 0.406), 
             (0.229, 0.224, 0.225),
         ),
-    ]) 
+    ])
 
     cocoapi_year = 2017
     vocab_file="./vocab.pkl",
@@ -124,7 +124,7 @@ if __name__ == '__main__':
     
     
     nocaps = NoCaps(
-        data_path="../data/nocaps/images",
+        data_path="../clean_data/nocaps",
         vocab_threshold=vocab_threshold,
         vocab_file="./vocab.pkl",
         start_word="<start>",
@@ -135,48 +135,78 @@ if __name__ == '__main__':
         transformations=transform,
         load_from_internet=False
         )
-    
-    
-
-    data_loader = data.DataLoader(dataset=nocaps, batch_size=1, pin_memory=True)
 
 
-    embedding_size = 256
-    hidden_size = 512
-    vocab_size = len(data_loader.dataset.vocab)
+    models: List[ImageCaptioner] = []
+    vocab_size = len(nocaps.vocab)  # The size of the vocabulary
 
-    image_captioner = EB7_LSTM(
+    models.append(R50_LSTM(
+        embed_size=256, # dimensionality of image and word embeddings
+        hidden_size=512, # number of features in hidden state of the RNN decoder
+        lstm_layers=1, # Number of hidden layers of each lstm cell
+        vocab_size=vocab_size,
+        bidirectional_lstm=False,
+    ))
+ 
+    models.append(EB7_LSTM(
+        embed_size=256, # dimensionality of image and word embeddings
+        hidden_size=512, # number of features in hidden state of the RNN decoder
+        lstm_layers= 3, # Number of hidden layers of each lstm cell
+        vocab_size=vocab_size,
+        bidirectional_lstm=False,
+    ))
+    models.append(EB7_LSTM(
         embed_size=256,  # dimensionality of image and word embeddings
         hidden_size=512,  # number of features in hidden state of the RNN decoder
         lstm_layers=3, # Number of hidden layers of each lstm cell
         vocab_size=vocab_size,
         bidirectional_lstm=True,
-    )
-    image_captioner.eval()
-
-    image_captioner.to(device)
-    image_captioner.CNN.load_state_dict(torch.load(f"../models/{model_name}/encoder-epoch{model_epoch}.pkl", map_location=torch.device(device)))
-    image_captioner.RNN.load_state_dict(torch.load(f"../models/{model_name}/decoder-epoch{model_epoch}.pkl", map_location=torch.device(device)))
-
-
-    # Run inference and store the result
-    predictions = []
-    info_every = 5
-    print(f"Len data loader {len(data_loader)}")
+    ))
+    models.append(ViT_LSTM(
+        embed_size=256, # dimensionality of image and word embeddings
+        hidden_size=512, # number of features in hidden state of the RNN decoder
+        lstm_layers=3, # Number of hidden layers of each lstm cell
+        vocab_size=vocab_size,
+        bidirectional_lstm=False,
+    ))
     
-    for i, image in tqdm(enumerate(data_loader)):
-        image = image.squeeze(0)
-        image = image.to(device)
-        features = image_captioner.CNN(image).unsqueeze(1)
-        output = image_captioner.RNN.sample(features)
-        predicted_caption = clean_sentence(output, data_loader.dataset.vocab.idx2word)
-        # print(f"PREDICTED CAPTION: {predicted_caption}")
-        predictions.append({"image_id": i, "caption": predicted_caption})
-    
-    # Print first 25 captions with their Image ID.
-    for k in range(25):
-        print(predictions[k]["image_id"], predictions[k]["caption"])
 
-    
-    # Save the predictions in a JSON file
-    json.dump(predictions, open(f"../predictions/{model_name}_{model_epoch}-predictions.json", "w"))
+    data_loader = data.DataLoader(dataset=nocaps, batch_size=1, pin_memory=True)
+    num_epochs = 4
+    predictions_folder = "../predictions/"
+
+    for image_captioner in models:
+        if not os.path.exists(predictions_folder + image_captioner.name):
+            os.makedirs(predictions_folder + image_captioner.name)
+
+        for epoch in range(1, num_epochs + 1):
+            image_captioner.eval()
+
+            image_captioner.to(device)
+            image_captioner.CNN.load_state_dict(torch.load(f"../models/{image_captioner.name}/encoder-epoch{epoch}.pkl", map_location=device))
+            image_captioner.RNN.load_state_dict(torch.load(f"../models/{image_captioner.name}/decoder-epoch{epoch}.pkl", map_location=device))
+            
+            # Run inference and store the result
+            predictions = []
+            info_every = 5
+            print(f"Len data loader {len(data_loader)}")
+            
+            for i, image in tqdm(enumerate(data_loader)):
+                image = image.squeeze(0)
+                image = image.to(device)
+                features = image_captioner.CNN(image).unsqueeze(1)
+                output = image_captioner.RNN.sample(features)
+                predicted_caption = clean_sentence(output, data_loader.dataset.vocab.idx2word)
+                # print(f"PREDICTED CAPTION: {predicted_caption}")
+                predictions.append({"image_id": i, "caption": predicted_caption})
+            
+            # # Print first 25 captions with their Image ID.
+            # for k in range(25):
+            #     print(predictions[k]["image_id"], predictions[k]["caption"])
+
+            
+            # Save the predictions in a JSON file
+            json.dump(predictions, open(f"{predictions_folder}{image_captioner.name}/predictions-epoch{epoch}.json", "w"))
+                                                
+
+

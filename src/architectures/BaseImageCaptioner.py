@@ -129,3 +129,67 @@ class ImageCaptioner(nn.Module):
     @abstractmethod
     def vocab_size(self) -> int:
         """Returns the size of the vocabulary used by the model."""
+
+
+
+
+
+
+
+
+
+def beam_search(decoder_output, beam_width, max_length, start_token, end_token, device):
+    """
+    Perform beam search to generate the most likely sequence.
+
+    Args:
+        decoder_output (Tensor): The output from the decoder model.
+        beam_width (int): The number of hypotheses to consider at each step.
+        max_length (int): The maximum length of the generated sequence.
+        start_token (int): The token representing the start of the sequence.
+        end_token (int): The token representing the end of the sequence.
+
+    Returns:
+        list: The most likely sequence of tokens.
+    """
+
+    # Initialize beam search
+    hypotheses = [[start_token] for _ in range(beam_width)]
+    scores = torch.zeros(beam_width, device=device)
+
+    # Beam search loop
+    for t in range(max_length):
+        # Expand hypotheses and scores
+        hypotheses_expanded = [h for h in hypotheses for _ in range(beam_width)]
+        scores_expanded = scores.repeat(beam_width)
+
+        # Calculate scores for all candidate tokens
+        decoder_output = decoder_output.view(beam_width, -1)  # (beam_width, vocab_size)
+        candidate_scores = scores_expanded + decoder_output.view(-1)  # (beam_width * vocab_size)
+
+        # Select top-K candidates
+        top_scores, top_indices = torch.topk(candidate_scores, k=beam_width, dim=0)
+
+        # Update hypotheses and scores
+        new_hypotheses = []
+        new_scores = []
+
+        for score, index in zip(top_scores, top_indices):
+            hyp_index = index // decoder_output.size(1)  # Index of the hypothesis
+            token_index = index % decoder_output.size(1)  # Index of the token
+
+            new_hypotheses.append(hypotheses_expanded[hyp_index] + [token_index.item()])
+            new_scores.append(score.item())
+
+        hypotheses = new_hypotheses
+        scores = torch.tensor(new_scores, device=device)
+
+        # Check if all hypotheses have ended
+        all_ended = all(h[-1] == end_token for h in hypotheses)
+        if all_ended:
+            break
+
+    # Select the hypothesis with the highest score
+    best_hypothesis = hypotheses[scores.argmax()]
+
+    return best_hypothesis

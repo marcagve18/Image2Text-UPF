@@ -1,13 +1,8 @@
 from metrics import NoCaps
-import json
 from torch.utils import data as data
-from vocabulary import Vocabulary
-from PIL import Image
 import torch
 from torchvision import transforms
-import skimage.io as io
 import MyTorchWrapper as mtw
-from cnn_rnn import ImageCaptioner
 from tqdm import tqdm
 
 if __name__ == '__main__':
@@ -58,7 +53,7 @@ if __name__ == '__main__':
     
     for i, image in tqdm(enumerate(data_loader)):
         image = image.to(device)
-        torch.save(image, f"../data/nocaps/images/{i}.pt")
+        torch.save(image, f"../clean_data/nocaps/{i}.pt")
     
 
     
