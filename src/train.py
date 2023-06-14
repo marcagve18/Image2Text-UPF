@@ -117,7 +117,7 @@ if __name__ == "__main__":
     from tokenizer import NltkTokenizer, Gpt2Tokenizer
 
     # Build data loader.
-    cocoapi_year = "2014"
+    cocoapi_year = "2017"
     tokenizer = NltkTokenizer(vocab_threshold=5, vocab_file="./vocab.pkl")
     gpt2_tokenizer = Gpt2Tokenizer()
     
@@ -148,6 +148,13 @@ if __name__ == "__main__":
     #     vocab_size=tokenizer.vocab_size(),
     #     bidirectional_lstm=False,
     # ))
+    models.append(R50_LSTM(
+        embed_size=256, # dimensionality of image and word embeddings
+        hidden_size=512, # number of features in hidden state of the RNN decoder
+        lstm_layers=3, # Number of hidden layers of each lstm cell
+        vocab_size=tokenizer.vocab_size(),
+        bidirectional_lstm=False,
+    ))
     # models.append(EB7_LSTM(
     #     embed_size=256, # dimensionality of image and word embeddings
     #     hidden_size=512, # number of features in hidden state of the RNN decoder
@@ -169,7 +176,7 @@ if __name__ == "__main__":
     #     vocab_size=tokenizer.vocab_size(),
     #     bidirectional_lstm=False,
     # ))
-    models.append(ViT_GPT2(vocab_size=gpt2_tokenizer.vocab_size()))
+    # models.append(ViT_GPT2(tokenizer=gpt2_tokenizer))
 
     # Train the model
     for image_captioner in models:

@@ -3,14 +3,16 @@ import torch.nn as nn
 import torchvision.models as models
 from torchvision.models.feature_extraction import create_feature_extractor
 from transformers import GPT2LMHeadModel
+from tokenizer import Gpt2Tokenizer
 
 
 from .BaseImageCaptioner import EncoderCNN, DecoderRNN, ImageCaptioner
 
 class GPT2(nn.Module):
-    def __init__(self):
+    def __init__(self, tokenizer: Gpt2Tokenizer):
         super().__init__()
         self.gpt2_model = GPT2LMHeadModel.from_pretrained('gpt2')
+        self.gpt2_model.resize_token_embeddings(len(tokenizer.tokenizer))
         self.gpt2_model.config.add_cross_attention = True
 
     def forward(self, features, captions):
@@ -72,12 +74,12 @@ class ViT(EncoderCNN):
 
 
 class ViT_GPT2(ImageCaptioner):
-    def __init__(self, vocab_size, embed_size=768) -> None:
+    def __init__(self, tokenizer: Gpt2Tokenizer, embed_size=768) -> None:
         super().__init__()
         self.__name = "ViT_GPT2"
-        self.__vocab_size = vocab_size
+        self.tokenizer = tokenizer
         self.__CNN = ViT(embed_size=embed_size)
-        self.__RNN = GPT2()
+        self.__RNN = GPT2(tokenizer=tokenizer)
 
     @property
     def name(self) -> str:
@@ -93,4 +95,4 @@ class ViT_GPT2(ImageCaptioner):
     
     @property
     def vocab_size(self) -> int:
-        return self.__vocab_size
+        return self.tokenizer.vocab_size()

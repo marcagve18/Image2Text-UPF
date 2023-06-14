@@ -25,7 +25,12 @@ class Tokenizer(ABC):
 class Gpt2Tokenizer(Tokenizer):
     def __init__(self):
         self.tokenizer = GPT2Tokenizer.from_pretrained('gpt2')
-        self.tokenizer.add_special_tokens({'eos_token': self.tokenizer.eos_token, 'bos_token': self.tokenizer.bos_token, 'unk_token': self.tokenizer.unk_token})
+        self.tokenizer.add_special_tokens({
+            'eos_token': '<EOS>',
+            'bos_token': '<BOS>',
+            'unk_token': '<UNK>',
+            'pad_token': '<PAD>',
+        })
     
     def tokenize(self, sentence: str) -> torch.Tensor:
         return self.tokenizer(sentence, return_tensors="pt").input_ids

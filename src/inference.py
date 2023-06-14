@@ -52,6 +52,13 @@ if __name__ == '__main__':
         vocab_size=vocab_size,
         bidirectional_lstm=False,
     ))
+    models.append(R50_LSTM(
+        embed_size=256, # dimensionality of image and word embeddings
+        hidden_size=512, # number of features in hidden state of the RNN decoder
+        lstm_layers=3, # Number of hidden layers of each lstm cell
+        vocab_size=vocab_size,
+        bidirectional_lstm=False,
+    ))
     models.append(EB7_LSTM(
         embed_size=256, # dimensionality of image and word embeddings
         hidden_size=512, # number of features in hidden state of the RNN decoder
