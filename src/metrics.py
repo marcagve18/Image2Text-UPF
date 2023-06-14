@@ -171,7 +171,7 @@ if __name__ == '__main__':
     ))
     
 
-    data_loader = data.DataLoader(dataset=nocaps, batch_size=1, pin_memory=True)
+    data_loader = data.DataLoader(dataset=nocaps, batch_size=1)
     num_epochs = 4
     predictions_folder = "../predictions/"
 
