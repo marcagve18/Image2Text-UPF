@@ -70,16 +70,23 @@ if __name__ == '__main__':
         embed_size=256,  # dimensionality of image and word embeddings
         hidden_size=512,  # number of features in hidden state of the RNN decoder
         lstm_layers=3, # Number of hidden layers of each lstm cell
-        vocabulary_size=vocab_size,
+        vocab_size=vocab_size,
         bidirectional_lstm=True,
     ))
     models.append(ViT_LSTM(
         embed_size=256, # dimensionality of image and word embeddings
         hidden_size=512, # number of features in hidden state of the RNN decoder
         lstm_layers=3, # Number of hidden layers of each lstm cell
-        vocabulary_size=vocab_size,
+        vocab_size=vocab_size,
         bidirectional_lstm=False,
     ))
+    # models.append(ViT_LSTM(
+    #     embed_size=256, # dimensionality of image and word embeddings
+    #     hidden_size=256, # number of features in hidden state of the RNN decoder
+    #     lstm_layers=5, # Number of hidden layers of each lstm cell
+    #     vocabulary_size=vocab_size,
+    #     bidirectional_lstm=False,
+    # ))
 
     # Load pre-trained weights
     for image_captioner in models:

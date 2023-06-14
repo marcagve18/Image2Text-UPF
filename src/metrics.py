@@ -100,7 +100,7 @@ def clean_sentence(output, idx2word):
 if __name__ == '__main__':
     device = mtw.get_torch_device(use_gpu=True, debug=True)
 
-    model_name = "efficientnetB7_LSTM_e256_h512_l3"
+    model_name = "efficientnetB7_LSTM_e256_h512_l3_bidirectional"
     model_epoch = "4"
 
     transform = transforms.Compose([
@@ -146,11 +146,11 @@ if __name__ == '__main__':
     vocab_size = len(data_loader.dataset.vocab)
 
     image_captioner = EB7_LSTM(
-        embed_size=256, # dimensionality of image and word embeddings
-        hidden_size=512, # number of features in hidden state of the RNN decoder
-        lstm_layers= 3, # Number of hidden layers of each lstm cell
+        embed_size=256,  # dimensionality of image and word embeddings
+        hidden_size=512,  # number of features in hidden state of the RNN decoder
+        lstm_layers=3, # Number of hidden layers of each lstm cell
         vocab_size=vocab_size,
-        bidirectional_lstm=False,
+        bidirectional_lstm=True,
     )
     image_captioner.eval()
 
