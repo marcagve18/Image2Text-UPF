@@ -1,0 +1,35 @@
+Image2Text-UPF
+├── assets
+├── clean_data
+│   ├── nocaps
+│   ├── train2017
+│   └── val2017
+├── data
+│   ├── cocoapi
+│   │   ├── annotations
+│   │   └── images
+│   └── nocaps
+│       └── images
+├── logs
+├── models
+│   ├── efficientnetB7_LSTM_e256_h512_l3
+│   ├── efficientnetB7_LSTM_e256_h512_l3_bidirectional
+│   ├── resnet50_LSTM_e256_h512_l1
+│   ├── resnet50_LSTM_e256_h512_l3
+│   └── ViT_LSTM_e256_h512_l3
+├── nocap_metrics
+│   ├── efficientnetB7_LSTM_e256_h512_l3
+│   ├── efficientnetB7_LSTM_e256_h512_l3_bidirectional
+│   ├── resnet50_LSTM_e256_h512_l1
+│   └── ViT_LSTM_e256_h512_l3
+├── predictions
+│   ├── efficientnetB7_LSTM_e256_h512_l3
+│   ├── efficientnetB7_LSTM_e256_h512_l3_bidirectional
+│   ├── resnet50_LSTM_e256_h512_l1
+│   └── ViT_LSTM_e256_h512_l3
+└── src
+    ├── architectures
+    ├── graphics
+    ├── MyTorchWrapper
+
+36 directories
