@@ -35,29 +35,42 @@ The COCO dataset can be easily handled through the [COCO API](https://github.com
 
 ## 3. Preprocessing the data
 
-In our previous lab session we decided to buy a Colab Pro license in order to have more computing power for the two remaining labs and this project. We first uploaded all the images and annotations of the COCO dataset to Google Drive in order to make them accessible from the notebook. Once this was done, we started executing our previously tested code in the Colab GPUs. Unfortunately, due to the large amount of images that the folder had, we were not even able to load an image from the notebook. Therefore, we had to move to local computing gain. Luckily, one of us had a GPU so we could speed up significantly the computations.
+In our previous lab session we decided to buy a Colab Pro license in order to have more computing power for the two remaining labs and this project. We first uploaded all the images and annotations of the COCO dataset to Google Drive in order to make them accessible from the notebook. Once this was done, we started executing our previously tested code in the Colab GPUs. Unfortunately, due to the large amount of images that the folder had, we were not even able to load an image to the notebook. Therefore, we had to move to local computing gain. Luckily, one of us had a GPU so we could speed up significantly the computations.
 
-When we training the first architectures, we realized that loading the images from the files was also a slow process. So, since we had to train several architectures we decided to save all the images directly as tensors by using `tensor.save()` and then `torch.load()` to load them. By doing this we improved noticeably the performance.
+When training the first architectures, we realized that loading the images from the files and applying the transformations each timw was also a slow process. For this reason, and as we had to train several architectures, we decided to save all the transformed images directly as tensors by using `tensor.save()` to then load them using `torch.load()`. By doing this we improved noticeably the performance and we removed the training bottleneck (loading and transforming the images).
 
 In the end, your directory structure should be the following:
 
 ```code
+Image2Text-UPF
 ├── assets
 ├── clean_data
-│   ├── train2017
-│   ├── val2017
+│   ├── nocaps
+│   ├── train2017
+│   └── val2017
+├── data
+│   ├── cocoapi
+│   │   ├── annotations
+│   │   └── images
 │   └── nocaps
 │       └── images
-├── data
-│   └── cocoapi
-│       ├── annotations
-│       └── images
-│           ├── train2017
-│           └── val2017
-│   
-│       
+├── logs
 ├── models
+│   ├── efficientnetB7_LSTM_e256_h512_l3
+│   ├── efficientnetB7_LSTM_e256_h512_l3_bidirectional
+│   ├── resnet50_LSTM_e256_h512_l1
+│   ├── resnet50_LSTM_e256_h512_l3
+│   └── ViT_LSTM_e256_h512_l3
+├── nocap_metrics
+│   ├── efficientnetB7_LSTM_e256_h512_l3
+│   ├── efficientnetB7_LSTM_e256_h512_l3_bidirectional
+│   ├── resnet50_LSTM_e256_h512_l1
+│   └── ViT_LSTM_e256_h512_l3
 ├── predictions
+│   ├── efficientnetB7_LSTM_e256_h512_l3
+│   ├── efficientnetB7_LSTM_e256_h512_l3_bidirectional
+│   ├── resnet50_LSTM_e256_h512_l1
+│   └── ViT_LSTM_e256_h512_l3
 └── src
 ```
 
@@ -69,16 +82,15 @@ In the end, your directory structure should be the following:
 
 ## 4. Initial idea : ViT & GPT2
 
-First of all we started by gathering information about the state of the art models that were performing better in image captioning. These have complex architectures that we considered to be out of the scope of the project, due to lack of time and advanced knowledge. 
+When we started by gathering information about the state of the art models that were performing better in image captioning we were highly surprised by the results that they manage to obtain. However, these have complex architectures that we considered to be out of the scope of the project, due to lack of time and advanced knowledge. 
 
-While we were looking for less complex but still performant models, we came across with `ViT + GPT2`. This model combines two different kind of transformers, **visual transformers** for extracting the features of the image (ViT encoder), and the **usual transformers** used by GPT2 in order to generate the captions.
+While we were looking for less complex but still performant models, we came across with `ViT + GPT2`. This model combines two different kind of transformers, **visual transformers** for extracting the features of the image (ViT encoder), and the **usual transformers** used by [GPT2](https://huggingface.co/gpt2) in order to generate the captions.
 
-This was our first approach, trying to combine pre-trained `ViT` and `GPT2` to generate captions. Unfortunately, there was little information about how these were combined and specificallly about how to implement the visual transformer in pytorch. Despite this, we considered that keeping GPT2 as the decoder would provide good results, so kept it but changed the image encoder.
-
+Our first approach was to try to combine pre-trained `ViT` and `GPT2` to generate captions. Unfortunately, there was little information about how these were combined and specificallly about how to implement the visual transformer in pytorch. Despite this, we considered that keeping GPT2 as the decoder would provide good results, so kept it but changed the image encoder.
 
 ## 5. VGG & GPT2
 
-`VGG` was a well known architecture by us, since we had previously worked with simple versions of it in the lab sessions. Therefore, we thought it was a good starting point to use it for extracting the image features. The models used in this architecture were `VGG16` and `GPT2-Small`. 
+[`VGG`](https://arxiv.org/pdf/1409.1556.pdf) was a well known architecture by us, since we had previously worked with simple versions of it in the lab sessions. Therefore, we thought it was a good starting point to use it for extracting the image features. The models used in this architecture were `VGG16` and `GPT2-Small`. 
 
 In order to join them to have the final "encoder-decoder" architecture we had to do two main modifications.
 
@@ -96,21 +108,69 @@ After training the model for some time we realized that the loss was too high, s
 
 ## 6. CNN & RNN
 
-This is the most used architecture as a starting point to image captioning. Therefore, we used an already existing [github project](https://github.com/iamirmasoud/image_captioning) as template, from which we could start doing different experiments.
+These types of architectures are the most simple ones and can be used as a starting point to get introduced into image captioning. The CNN is used as en encoder to extract the image features, and the RNN acts as a decoder, by generating the caption from the feature map. For this part,  we used an already existing [github project](https://github.com/iamirmasoud/image_captioning) as template, from which we could start doing different experiments.
+
+We have tried different pre-trained encoder architectures, for which we have re-trained some of their layers, and experimented with simple RNN decoders, which we have fully trained.
 
 ### Resnet50 with a simple RNN
 
-This is the architecture used by the aforementioned project, which we used as a "base model" to compare the performance with. 
+**ResNet-50** is a deep convolutional neural network architecture which comes from the [ResNet](https://arxiv.org/pdf/1512.03385.pdf) family of models. It is designed to address the problem of vanishing gradients in very deep neural networks due to the use of residual connections. It is a very good baseline model to perform image classification and object detection as it has been trained with the [ImageNet](https://www.image-net.org/index.php) dataset. Therefore, we believed that it could act as a good decoder for our image captioning task.
 
-<span style="color:red">// TODO : explicar alguna cosa més!</span>
+As a decoder, we used an RNN with LSTM with 512  hidden neurons and 1 hidden layer. Overall, the model has $\approx 33\text{M}$ parameters,  of which $\approx 9\text{M}$ are trainable.
 
 ### EfficientNet-B7 with bidirectional LSTMs
 
-The performance of the previous model was not bad at all but we were convinced that we could do some adjustments to improve it. So, after doing some research we found out that `EfficientnetB7` was a recent model of image classification that despite not having a huge amount of parameters performed very well. Apart from that, we also decided to use a more complex architecture in the decoder, so we implemented a bidirectional LSTM that we had already worked with in the past.
+The performance of the previous model was not bad at all but we were convinced that we could do some adjustments to improve it. So, after doing some research we found out that [**EfficientnetB7**](https://arxiv.org/pdf/1905.11946.pdf) was a recent model of image classification that despite not having a huge amount of parameters performed very well. 
 
-The performance of this model was incredibly better than the previous one. During the implementation we also tried to use Efficientnet with RNN, and the final loss value was around $1.7$. By using the bidirectional LSTMs we reduced the final loss to $0.5$. 
+This time, we decided to use a more complex architecture in the decoder. We increased the number of hidden layers of the RNN to 3 and we tried it trying both with bidirectional and regular LSTMs.
+
+The trainable parameters increased to $\approx 16 \text{M}$ for the regular LSTM, and to $\approx 31 \text{M}$ for the bidirectional one.
+
+As it will be seen later, the results were not as good as with the previous model. Even though the training loss of the bidirectional model was extremely low, it did not manage to learn how to build the captions.
+
+### Trying with visual transformers
+
+Visual Transformers are a class of deep learning models that apply the transformer architecture to computer vision tasks. They have proven to be highly effective in capturing long-range dependencies and modeling sequential data by using self-attention mechanisms. For this reason, we wanted to experiment how they performed for our image captioning task. We used a pre-trained version of ViT-B16 along with the same 3 hidden layers RNN as in the previous experimets.
+
+### Training loss evolution
+
+The following image shows the training loss evolution for all the different models that we tried. The loss function that has been used is the `CrossEntropyLoss` and images have been taken in batches of $128$ images.
+
+<img src="assets/training_loss_evol.png"></img>
+
+It is interesting to see how the training loss for the bidirectional LSTM is extremely low compared to the others. This would initially suggest that its performance is by far the better. However, by still having to analytically analyse how the models behave with the testing dataset, we can see some of the resulting captions for the validation dataset:
+
+<img src="assets/hot_dog.png" style="zoom:50%"></img>
+
+**Original caption**: a bun with food in it wrapped in a paper towel
+
+**Resnet50**: a hot dog with toppings and some fries.
+
+**EfficientNetB7**: a plate of food with a sandwich and a fork
+
+**EfficientNetB7-BiLSTM**: bread a bread a bread a bread a bread…
+
+**Vit**: a hot dog with ketchup and ketchup on a bun
+
+<img src="assets/bus_street.png" style="zoom:50%"></img>
+
+**Original caption**: a store on the corner of the street with people going past
+
+**Resnet50**: a red double decker bus driving down a street
+
+**EfficientNetB7**: a city street with a bus and a car
+
+**EfficientNetB7-BiLSTM**: homes with homes with homes with homes…
+
+**Vit**: a read truck is parked in front of a building
+
+
+
+As we can see, the bidirectional LSTM produces very bad captions. It detects one object of the image and repeats it many times. Our hypothesis on why the training loss is that low is because of the Cross Entropy function, which is used for classification problems. Therefore, if our model properly classifies one object of the image and repeats it many times, this will cause the error function to decrease despite the fact of the resulting caption of being non-sense. This means that we can not fully trust the evolution of the loss function as a method to analyse the preformance of our models. To do so, section 7 presents a well-known benchmark for evaluating natural language models.
 
 ## 7. Nocaps
+
+[NOCAPS](https://nocaps.org) stands for "Novel Object Captioning at Scale," which is a research project focused on generating accurate and detailed captions for images that contain novel objects. It addresses the limitations of existing image captioning models, which often struggle to describe objects that are not commonly seen or have limited training examples. In this part of the project we have focused on analysing our models through this state-of-the-art benchmark.
 
 
 ### 7.1. Preprocessing
@@ -129,7 +189,7 @@ Natural language models' performance are measured with the usage of **metrics**.
   $$\mathrm{BP}= \begin{cases}1 & \text { if } c>r \\ e^{(1-r / c)} & \text { if } c \leq r\end{cases}$$
   is brevity penalty, $c$ is the length of the predicted caption, $r$ is the length of the original one, $w_n$ are positive weights adding up to 1 and $p_n$ is the modified $n$-gram precision. More information can be found on the [original paper](https://aclanthology.org/P02-1040.pdf) of the metric.
 - ROUGE: it stands for Recall-Oriented Understudy for Gisting Evaluation is a set of metrics used to evaluate the quality of text summarization. It measures the overlap between the predicted summary and one or more reference summaries, considering n-grams of different lengths. For this project, text summaries are the captions. More information can be found [here](https://aclanthology.org/W04-1013.pdf).
-- CIDEr: the Consensus-based Image Description Evaluation is another metric **specifically designed for image captioning**. It considers both the content relevance and the linguistic quality of the captions and it takes into account consensus among multiple human captions, recognizing that there can be multiple valid ways to describe an image. To know more information, refer to the original [paper](https://arxiv.org/pdf/1411.5726.pdf).
+- **CIDEr**: the Consensus-based Image Description Evaluation is another metric **specifically designed for image captioning**. It considers both the content relevance and the linguistic quality of the captions and it takes into account consensus among multiple human captions, recognizing that there can be multiple valid ways to describe an image. To know more information, refer to the original [paper](https://arxiv.org/pdf/1411.5726.pdf).
 
 Other metrics: [METEOR](https://aclanthology.org/W05-0909.pdf), [Perplexity](https://en.wikipedia.org/wiki/Perplexity), [SPICE](https://arxiv.org/pdf/1607.08822.pdf).
 
@@ -153,9 +213,45 @@ To be able to submit the results, we require our model to generate the captions 
 ]
 ```
 
-After having preprocessed the data as explained in section 7.1, the desired file can be obtained executing the `metrics.py` script. The following table shows the results of our models
+After having preprocessed the data as explained in section 7.1, the desired file can be obtained executing the `metrics.py` script. The results can be found under the `nocaps_metrics/` folder.
+
+The following image shows the evolution of the CIDEr score of our models as they were training.
+
+<img src="assets/CIDErevolution.png"></img>
+
+As we can see, our bidirectional LSTMs are useless for this task, as we could have seen with the generated captions. A part from that, we see that the rest of the models manage to increase their performance as training epochs increase even in the recognition of objects which were not even close to the ones from the training dataset.
+
+## 8. Some custom captions
+
+<img src="assets/pasta.png" style="zoom:50%"></img>
+
+**Resnet50**: a table with a bowl of food and drink
+
+**EfficientNetB7**: a person holding a slice of pizza in their hand
+
+**EfficientNetB7-BiLSTM**: chopsticks with chopsticks with …. With chopsticks
+
+**Vit**: a table with a plate of food and a drink
+
+<img src="assets/living_room.png" style="zoom:50%"></img>
+
+**Resnet50**: a living room with a television and a television
+
+**EfficientNetB7**: a kitchen with a stove, stove, and refrigerator
+
+**EfficientNetB7-BiLSTM**: pasta a pasta a … a pasta a pasta
+
+**Vit**: a television sitting on a couch next to a television
+
+<img src="assets/team.png" style="zoom:50%"></img>
+
+**Resnet50**: a man standing in front of a flying kite
+
+**EfficientNetB7**: a group of people standing on beach flying kites
+
+**EfficientNetB7-BiLSTM**: drinking a drinking … a drinking a drinking
+
+**Vit**: a man with a hat and a tie
 
 
-
-## 8. Conclusions
 
